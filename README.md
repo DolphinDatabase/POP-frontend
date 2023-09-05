@@ -1,4 +1,4 @@
-# pop-frontend
+# POP-frontend
 
 This template should help get you started developing with Vue 3 in Vite.
 
@@ -44,4 +44,3 @@ npm run build
 ```sh
 npm run lint
 ```
-# POP-frontend
