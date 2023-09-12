@@ -2,6 +2,8 @@
 import beatriz from '@/assets/team/beatriz.jpg'
 import pedro from '@/assets/team/pedro.jpg'
 import hamilton from '@/assets/team/hamilton.jpeg'
+import victor from '@/assets/team/victor.jpg'
+import marcos from '@/assets/team/marcos.jpeg'
 </script>
 
 <template>
@@ -17,7 +19,7 @@ import hamilton from '@/assets/team/hamilton.jpeg'
       <div>
         <el-avatar
           :size="70"
-          src="https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png"
+          :src="victor"
         />
         <h4>Victor Cavichioli</h4>
         <p>Scrum Master</p>
@@ -38,7 +40,7 @@ import hamilton from '@/assets/team/hamilton.jpeg'
       <div>
         <el-avatar
           :size="70"
-          src="https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png"
+          :src="marcos"
         />
         <h4>Marcos Calixto</h4>
         <p>Developer</p>
