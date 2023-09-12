@@ -1,24 +1,91 @@
 <script setup lang="ts">
-
+import beatriz from '@/assets/team/beatriz.jpg'
+import pedro from '@/assets/team/pedro.jpg'
 </script>
 
 <template>
-  <div class="avatars">
-    <el-avatar :size="70" src="https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png" />
-    <el-avatar :size="70" src="https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png" />
-    <el-avatar :size="70" src="https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png" />
-    <el-avatar :size="70" src="https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png" />
-    <el-avatar :size="70" src="https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png" />
-    <el-avatar :size="70" src="https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png" />
+  <div class="all-content">
+    <h2>Quem nós somos?</h2>
+    <h6>Com muito apreço garantindo uma colheita mais sustentável e produtiva à você</h6>
+    <div class="avatars">
+      <div>
+        <el-avatar :size="70" :src="beatriz" />
+        <h4>Beatriz Santos</h4>
+        <p>Product Owner</p>
+      </div>
+      <div>
+        <el-avatar
+          :size="70"
+          src="https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png"
+        />
+        <h4>Victor Cavichioli</h4>
+        <p>Scrum Master</p>
+      </div>
+      <div>
+        <el-avatar :size="70" :src="pedro" />
+        <h4>Pedro Motta</h4>
+        <p>Developer</p>
+      </div>
+      <div>
+        <el-avatar
+          :size="70"
+          src="https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png"
+        />
+        <h4>Hamilton Zanini</h4>
+        <p>Developer</p>
+      </div>
+      <div>
+        <el-avatar
+          :size="70"
+          src="https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png"
+        />
+        <h4>Marcos Calixto</h4>
+        <p>Developer</p>
+      </div>
+      <div>
+        <el-avatar
+          :size="70"
+          src="https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png"
+        />
+        <h4>Renata Garcia</h4>
+        <p>Developer</p>
+      </div>
+    </div>
   </div>
 </template>
 
 <style scoped>
+.all-content {
+  display: grid;
+  background-color: #5bb042;
+  color: #ffffff;
+  padding: 70px;
+}
+
+h2 {
+  margin: 0;
+  text-align: center;
+}
+
+h6 {
+  text-align: center;
+  margin-bottom: 40px;
+  font-weight: 200;
+}
+
 .avatars {
-    background-color: #5BB042;
-    display: grid;
-    grid-template-columns: repeat(6, 3fr);
-    justify-items: center;
-    padding: 180px;
+  display: grid;
+  grid-template-columns: repeat(6, 3fr);
+  justify-items: center;
+}
+
+.avatars div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+p {
+  margin: 0;
 }
 </style>
