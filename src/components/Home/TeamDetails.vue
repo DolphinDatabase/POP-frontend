@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import beatriz from '@/assets/team/beatriz.jpg'
 import pedro from '@/assets/team/pedro.jpg'
+import hamilton from '@/assets/team/hamilton.jpeg'
 </script>
 
 <template>
@@ -29,7 +30,7 @@ import pedro from '@/assets/team/pedro.jpg'
       <div>
         <el-avatar
           :size="70"
-          src="https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png"
+          :src="hamilton"
         />
         <h4>Hamilton Zanini</h4>
         <p>Developer</p>
@@ -40,14 +41,6 @@ import pedro from '@/assets/team/pedro.jpg'
           src="https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png"
         />
         <h4>Marcos Calixto</h4>
-        <p>Developer</p>
-      </div>
-      <div>
-        <el-avatar
-          :size="70"
-          src="https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png"
-        />
-        <h4>Renata Garcia</h4>
         <p>Developer</p>
       </div>
     </div>
@@ -75,7 +68,7 @@ h6 {
 
 .avatars {
   display: grid;
-  grid-template-columns: repeat(6, 3fr);
+  grid-template-columns: repeat(5, 3fr);
   justify-items: center;
 }
 

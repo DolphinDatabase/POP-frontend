@@ -10,6 +10,11 @@ const options = ref(['Início', 'Solução', 'Sobre'])
 const chooseOpt = ref('Início')
 const loginModal = ref(false)
 
+const login = ref({
+  email: '',
+  senha: ''
+})
+
 function scrollToElement(option: string) {
   let elementId = ''
   switch (option) {
@@ -30,7 +35,6 @@ function scrollToElement(option: string) {
     element.scrollIntoView({ behavior: 'smooth' })
   }
 }
-
 </script>
 
 <template>
@@ -79,18 +83,44 @@ function scrollToElement(option: string) {
     </div>
   </div>
   <div class="modal" v-if="loginModal">
-    <el-dialog v-model="loginModal" title="Shipping address">
-    <template #footer>
-      <span class="dialog-footer">
-        <el-button @click="loginModal = false">Cancel</el-button>
-        <el-button type="primary" @click="loginModal = false">
-          Confirm
-        </el-button>
-      </span>
-    </template>
-  </el-dialog>
+    <el-dialog v-model="loginModal">
+      <div class="cover">
+        <img src="../assets/capa.svg" alt="" />
+      </div>
+      <div class="login-info">
+        <div>
+          <h2>Login</h2>
+          <p>Digite as informações necessárias</p>
+        </div>
+        <div>
+          <el-form :model="login" label-width="120px" label-position="top">
+            <el-form-item>
+              <el-input v-model="login.email" placeholder="Email" />
+            </el-form-item>
+            <el-form-item>
+              <el-input v-model="login.senha" placeholder="Senha" />
+            </el-form-item>
+          </el-form>
+        </div>
+        <div class="login-btn">
+          <div>
+            <el-button type="primary" round>Entrar</el-button>
+          </div>
+          <div style="display: 'flex'">
+            <p>ou</p>
+          </div>
+          <div>
+            <el-button round>Cadastrar</el-button>
+          </div>
+        </div>
+      </div>
+    </el-dialog>
   </div>
-  <footer>© All rights reserved.</footer>
+  <footer>
+    © 2023
+    <img src="../assets/logos/light_logo.svg" alt="" />
+    - All rights reserved
+  </footer>
 </template>
 
 <style scoped>
@@ -133,6 +163,31 @@ function scrollToElement(option: string) {
   height: 54px;
 }
 
+.modal img {
+  height: 500px;
+  width: 400px;
+  object-fit: cover;
+  border-radius: 25px 0px 0px 25px;
+}
+
+.login-info {
+  display: flex;
+  padding: 0 32px;
+  justify-content: center;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.login-info h2 {
+  color: #000000;
+}
+
+.login-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
 footer {
   background-color: #282a2c;
   color: #ffffff;
@@ -140,10 +195,40 @@ footer {
   display: flex;
   justify-content: center;
   padding: 4px 0;
+  gap: 8px;
+}
+
+footer img {
+  width: 60px;
 }
 </style>
 
 <style>
+.login-btn .el-button.is-round {
+  width: 20vw !important;
+}
+
+.el-input__wrapper {
+  box-shadow: none !important;
+  border-bottom: solid 1px #d7d9dd;
+}
+
+.el-dialog {
+  border-radius: 25px !important;
+}
+
+.el-dialog__header {
+  padding: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+.el-dialog__body {
+  padding: 0 !important;
+  height: 500px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
 .el-radio.is-bordered.is-checked {
   border-color: #53b137 !important;
   border-radius: 50px !important;
