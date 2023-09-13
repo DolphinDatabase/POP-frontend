@@ -1,18 +1,25 @@
 <script setup lang="ts">
-import NavBar from '@/components/Home/NavBar.vue'
 import PrincipalHome from '@/components/Home/PrincipalHome.vue'
 import { ref } from 'vue'
 import SolutionsCarousel from '@/components/Home/SolutionsCarousel.vue'
 import TeamDetails from '@/components/Home/TeamDetails.vue'
-import LoginModal from '@/components/Modal/ModalLogin.vue'
 
 const options = ref(['Início', 'Solução', 'Sobre'])
 const chooseOpt = ref('Início')
 const loginModal = ref(false)
+const cadastroModal = ref(false)
 
 const login = ref({
   email: '',
   senha: ''
+})
+
+const cadastro = ref({
+  nome: '',
+  email: '',
+  senha: '',
+  termos: false,
+  privacidade: false
 })
 
 function scrollToElement(option: string) {
@@ -52,7 +59,7 @@ function scrollToElement(option: string) {
             <el-button round @click="loginModal = true">Entrar</el-button>
           </div>
           <div>
-            <el-button type="primary" round>Cadastrar</el-button>
+            <el-button type="primary" round @click="cadastroModal = true">Cadastrar</el-button>
           </div>
         </div>
       </div>
@@ -81,13 +88,24 @@ function scrollToElement(option: string) {
     <div class="team" id="about">
       <team-details />
     </div>
+    <div class="terms">
+      <a href="/politics">Política de privacidade</a>
+      <a href="/terms">Termos de Uso</a>
+      <a href="https://github.com/DolphinDatabase/Cloud-In/wiki/Development-Team" target="_blank">Suporte e contato</a>
+    </div>
   </div>
+  <footer>
+    © 2023
+    <img src="../assets/logos/light_logo.svg" alt="" />
+    - All rights reserved
+  </footer>
+  <!-- MODAL -->
   <div class="modal" v-if="loginModal">
     <el-dialog v-model="loginModal">
       <div class="cover">
         <img src="../assets/capa.svg" alt="" />
       </div>
-      <div class="login-info">
+      <div class="modal-info">
         <div>
           <h2>Login</h2>
           <p>Digite as informações necessárias</p>
@@ -110,20 +128,60 @@ function scrollToElement(option: string) {
             <p>ou</p>
           </div>
           <div>
-            <el-button round>Cadastrar</el-button>
+            <el-button round @click="() => {cadastroModal = true; loginModal = false}">Cadastrar</el-button>
           </div>
         </div>
       </div>
     </el-dialog>
   </div>
-  <footer>
-    © 2023
-    <img src="../assets/logos/light_logo.svg" alt="" />
-    - All rights reserved
-  </footer>
+  <div class="modal" v-if="cadastroModal">
+    <el-dialog v-model="cadastroModal">
+      <div class="cover">
+        <img src="../assets/capa.svg" alt="" />
+      </div>
+      <div class="modal-info">
+        <div>
+          <h2>Criar conta</h2>
+          <p>Digite as informações necessárias</p>
+        </div>
+        <div>
+          <el-form :model="cadastro" label-width="120px" label-position="top">
+            <el-form-item>
+              <el-input v-model="cadastro.nome" placeholder="Nome completo" />
+            </el-form-item>
+            <el-form-item>
+              <el-input v-model="cadastro.email" placeholder="Email" />
+            </el-form-item>
+            <el-form-item>
+              <el-input v-model="cadastro.senha" placeholder="Senha" />
+            </el-form-item>
+            <el-checkbox v-model="cadastro.termos" label="Li e aceito os Termos de Uso." size="large" />
+            <el-checkbox v-model="cadastro.privacidade" label="Li e aceito a Política de Privacidade." size="large" />
+          </el-form>
+        </div>
+        <div class="login-btn">
+          <div>
+            <el-button type="primary" round>Criar conta</el-button>
+          </div>
+        </div>
+      </div>
+    </el-dialog>
+  </div>
 </template>
 
 <style scoped>
+.terms {
+  display: flex;
+  gap: 24px;
+  flex-direction: column;
+  padding: 0 50px 50px 50px;
+}
+
+.terms a {
+  color: #282A2C;
+  text-decoration: none;
+}
+
 .nav {
   padding: 36px 40px;
   display: grid;
@@ -170,7 +228,7 @@ function scrollToElement(option: string) {
   border-radius: 25px 0px 0px 25px;
 }
 
-.login-info {
+.modal-info {
   display: flex;
   padding: 0 32px;
   justify-content: center;
@@ -178,7 +236,7 @@ function scrollToElement(option: string) {
   gap: 24px;
 }
 
-.login-info h2 {
+.modal-info h2 {
   color: #000000;
 }
 
@@ -204,6 +262,16 @@ footer img {
 </style>
 
 <style>
+.el-checkbox__input.is-checked+.el-checkbox__label {
+  color: #282a2c !important;
+}
+
+.el-checkbox__input.is-checked .el-checkbox__inner {
+  background-color: #282a2c !important;
+  border-color: #282a2c !important;
+  color: #ffffff;
+}
+
 .login-btn .el-button.is-round {
   width: 20vw !important;
 }
