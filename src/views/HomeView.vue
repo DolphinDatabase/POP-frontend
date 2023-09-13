@@ -91,7 +91,9 @@ function scrollToElement(option: string) {
     <div class="terms">
       <a href="/politics">Política de privacidade</a>
       <a href="/terms">Termos de Uso</a>
-      <a href="https://github.com/DolphinDatabase/Cloud-In/wiki/Development-Team" target="_blank">Suporte e contato</a>
+      <a href="https://github.com/DolphinDatabase/Cloud-In/wiki/Development-Team" target="_blank"
+        >Suporte e contato</a
+      >
     </div>
   </div>
   <footer>
@@ -128,7 +130,16 @@ function scrollToElement(option: string) {
             <p>ou</p>
           </div>
           <div>
-            <el-button round @click="() => {cadastroModal = true; loginModal = false}">Cadastrar</el-button>
+            <el-button
+              round
+              @click="
+                () => {
+                  cadastroModal = true
+                  loginModal = false
+                }
+              "
+              >Cadastrar</el-button
+            >
           </div>
         </div>
       </div>
@@ -155,8 +166,22 @@ function scrollToElement(option: string) {
             <el-form-item>
               <el-input v-model="cadastro.senha" placeholder="Senha" />
             </el-form-item>
-            <el-checkbox v-model="cadastro.termos" label="Li e aceito os Termos de Uso." size="large" />
-            <el-checkbox v-model="cadastro.privacidade" label="Li e aceito a Política de Privacidade." size="large" />
+            <div class="check-terms">
+              <el-checkbox
+                v-model="cadastro.termos"
+                label="Li e aceito os Termos de Uso."
+                size="large"
+              />
+              <el-icon @click="$router.push('/terms')"><Connection /></el-icon>
+            </div>
+            <div class="check-terms">
+              <el-checkbox
+                v-model="cadastro.privacidade"
+                label="Li e aceito a Política de Privacidade."
+                size="large"
+              />
+              <el-icon @click="$router.push('/politics')"><Connection /></el-icon>
+            </div>
           </el-form>
         </div>
         <div class="login-btn">
@@ -178,7 +203,7 @@ function scrollToElement(option: string) {
 }
 
 .terms a {
-  color: #282A2C;
+  color: #282a2c;
   text-decoration: none;
 }
 
@@ -198,6 +223,17 @@ function scrollToElement(option: string) {
 .theme-btn button {
   background-color: transparent;
   border: none;
+  cursor: pointer;
+}
+
+.check-terms {
+  display: grid;
+  grid-template-columns: 4fr 1fr;
+  align-items: center;
+}
+
+.check-terms .el-icon{
+  color: #2898FF;
   cursor: pointer;
 }
 
@@ -262,7 +298,7 @@ footer img {
 </style>
 
 <style>
-.el-checkbox__input.is-checked+.el-checkbox__label {
+.el-checkbox__input.is-checked + .el-checkbox__label {
   color: #282a2c !important;
 }
 
