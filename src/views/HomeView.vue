@@ -91,7 +91,7 @@ function scrollToElement(option: string) {
     <div class="terms">
       <a href="/politics">Política de privacidade</a>
       <a href="/terms">Termos de Uso</a>
-      <a href="https://github.com/DolphinDatabase/Cloud-In/wiki/Development-Team" target="_blank"
+      <a href="https://github.com/DolphinDatabase/POP/wiki/Development-Team" target="_blank"
         >Suporte e contato</a
       >
     </div>
