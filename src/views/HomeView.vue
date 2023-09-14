@@ -18,6 +18,8 @@ const cadastro = ref({
   nome: '',
   email: '',
   senha: '',
+  proprietario: false,
+  cpf: '',
   termos: false,
   privacidade: false
 })
@@ -166,21 +168,27 @@ function scrollToElement(option: string) {
             <el-form-item>
               <el-input v-model="cadastro.senha" placeholder="Senha" />
             </el-form-item>
-            <div class="check-terms">
-              <el-checkbox
-                v-model="cadastro.termos"
-                label="Li e aceito os Termos de Uso."
-                size="large"
-              />
-              <el-icon @click="$router.push('/terms')"><Connection /></el-icon>
-            </div>
-            <div class="check-terms">
-              <el-checkbox
-                v-model="cadastro.privacidade"
-                label="Li e aceito a Política de Privacidade."
-                size="large"
-              />
-              <el-icon @click="$router.push('/politics')"><Connection /></el-icon>
+            <el-checkbox v-model="cadastro.proprietario" label="É proprietário?" size="large" />
+            <el-form-item v-if="cadastro.proprietario">
+              <el-input v-model="cadastro.senha" placeholder="CPF" />
+            </el-form-item>
+            <div class="all-terms">
+              <div class="check-terms">
+                <el-checkbox
+                  v-model="cadastro.termos"
+                  label="Li e aceito os Termos de Uso."
+                  size="large"
+                />
+                <el-icon @click="$router.push('/terms')"><Connection /></el-icon>
+              </div>
+              <div class="check-terms">
+                <el-checkbox
+                  v-model="cadastro.privacidade"
+                  label="Li e aceito a Política de Privacidade."
+                  size="large"
+                />
+                <el-icon @click="$router.push('/politics')"><Connection /></el-icon>
+              </div>
             </div>
           </el-form>
         </div>
@@ -232,8 +240,8 @@ function scrollToElement(option: string) {
   align-items: center;
 }
 
-.check-terms .el-icon{
-  color: #2898FF;
+.check-terms .el-icon {
+  color: #2898ff;
   cursor: pointer;
 }
 
@@ -266,10 +274,13 @@ function scrollToElement(option: string) {
 
 .modal-info {
   display: flex;
-  padding: 0 32px;
-  justify-content: center;
+  padding: 20px 32px;
   flex-direction: column;
-  gap: 24px;
+  gap: 16px;
+}
+
+.all-terms {
+  display: grid;
 }
 
 .modal-info h2 {
@@ -381,5 +392,9 @@ footer img {
 .login .el-button.is-round {
   border-color: #282a2c !important;
   color: #282a2c !important;
+}
+
+.el-form-item {
+  margin-bottom: 8px !important;
 }
 </style>
