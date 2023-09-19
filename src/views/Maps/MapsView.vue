@@ -1,28 +1,14 @@
-<template>
-  <div>
-    <h4>Your position</h4>
-    Latitude: {{ currPos.lat.toFixed(2) }} Longitude: {{ currPos.lng.toFixed(2) }}
-    <input id="pac-input" class="controls" type="text" placeholder="Search Box" />
-    <div v-if="otherPos">
-      <h4>clicked position</h4>
-      <span>Latitude: {{ otherPos.lat.toFixed(2) }} Longitude: {{ otherPos.lng.toFixed(2) }} </span>
-    </div>
-    <div id="map" style="height: 100vh"></div>
-  </div>
-</template>
-
 <script setup lang="ts">
-import useGeolocation from '@/services/useGeolocation'
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { onMounted, ref, onUnmounted, computed } from 'vue'
+import beatriz from '@/assets/team/beatriz.jpg'
 
-const { coords } = useGeolocation()
+const placeDetail = ref()
 const currPos = computed(() => ({
-  lat: coords.value.latitude,
-  lng: coords.value.longitude
+  lat: -14.235004,
+  lng: -51.92528
 }))
 const otherPos = ref()
 const clickListener = ref()
-const addressInput = ref(null)
 onMounted(async () => {
   initMap()
 })
@@ -33,13 +19,13 @@ onUnmounted(async () => {
 
 function initMap(): void {
   const mapElement = document.getElementById('map')
-  const input = document.getElementById('pac-input') as HTMLInputElement
+  const input = document.getElementById('search') as HTMLInputElement
   const searchBox = new google.maps.places.SearchBox(input)
 
   if (mapElement) {
     const map = new google.maps.Map(mapElement, {
       center: currPos.value,
-      zoom: 8,
+      zoom: 5,
       mapTypeId: 'hybrid'
     })
     map.data.setStyle((feature) => {
@@ -52,7 +38,7 @@ function initMap(): void {
       'click',
       ({ latLng: { lat, lng } }) => (otherPos.value = { lat: lat(), lng: lng() })
     )
-    map.controls[google.maps.ControlPosition.TOP_LEFT].push(input)
+    map.controls[google.maps.ControlPosition.LEFT_TOP].push(input)
 
     // Bias the SearchBox results towards current map's viewport.
     map.addListener('bounds_changed', () => {
@@ -65,6 +51,10 @@ function initMap(): void {
     // more details for that place.
     searchBox.addListener('places_changed', () => {
       const places = searchBox.getPlaces()
+
+      places.forEach((p) => {
+        placeDetail.value = p.formatted_address
+      })
 
       if (places.length == 0) {
         return
@@ -115,19 +105,101 @@ function initMap(): void {
   }
 }
 </script>
+<template>
+  <div>
+    <div class="location-container">
+      <div class="location">
+        <div class="loc-address">
+          <el-icon><LocationFilled /></el-icon>
+          <h4>{{ placeDetail }}</h4>
+        </div>
+        <div v-if="otherPos">
+          <h6>Latitude: {{ otherPos.lat.toFixed(2) }} Longitude: {{ otherPos.lng.toFixed(2) }}</h6>
+        </div>
+      </div>
+      <el-avatar :size="40" :src="beatriz" />
+    </div>
+    <div class="location-content">
+      <input id="search" class="controls" type="text" placeholder="Pesquisar" />
+      <div id="map" style="height: 87vh"></div>
+    </div>
+  </div>
+  <footer>
+    © 2023
+    <img src="../../assets/logos/light_logo.svg" alt="" />
+    - All rights reserved
+  </footer>
+</template>
 <style scoped>
-#pac-input {
-  background-color: #fff;
-  font-family: Roboto;
-  font-size: 15px;
-  font-weight: 300;
-  margin-left: 12px;
-  padding: 0 11px 0 13px;
-  text-overflow: ellipsis;
-  width: 400px;
+.location-content input {
+  left: 24px !important;
+  width: 300px;
+  border-radius: 50px;
+  height: 20px;
+  padding: 8px 16px;
+  border: 1px solid grey;
+}
+.image {
+  width: 120px;
+}
+.map-view-container {
+  display: grid;
+  grid-template-columns: 1fr 5fr;
 }
 
-#pac-input:focus {
-  border-color: #4d90fe;
+.loc-address {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+footer {
+  background-color: #282a2c;
+  color: #ffffff;
+  font-weight: 200;
+  display: flex;
+  justify-content: center;
+  padding: 4px 0;
+  gap: 8px;
+  position: fixed;
+  width: 100vw;
+}
+
+footer img {
+  width: 60px;
+}
+
+.map-filter {
+  padding: 0 16px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  justify-items: center;
+  row-gap: 24px;
+  column-gap: 8px;
+}
+
+.location-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  justify-items: end;
+  padding: 16px 24px;
+  align-items: center;
+}
+
+.location h6 {
+  margin: 0;
+  color: #9FA2A5;
+}
+.location h4 {
+  margin: 0;
+}
+</style>
+<style>
+.location .el-icon {
+  color: #ef5350;
+}
+
+.gmnoprint {
+  display: none;
 }
 </style>
