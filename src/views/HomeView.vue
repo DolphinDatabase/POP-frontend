@@ -152,7 +152,7 @@ function scrollToElement(option: string) {
       <div class="cover">
         <img src="../assets/capa.svg" alt="" />
       </div>
-      <div class="modal-info">
+      <div class="modal-register">
         <div>
           <h2>Criar conta</h2>
           <p>Digite as informações necessárias</p>
@@ -166,11 +166,11 @@ function scrollToElement(option: string) {
               <el-input v-model="cadastro.email" placeholder="Email" />
             </el-form-item>
             <el-form-item>
-              <el-input v-model="cadastro.senha" placeholder="Senha" />
+              <el-input v-model="cadastro.senha" placeholder="Senha" type="password" show-password/>
             </el-form-item>
             <el-checkbox v-model="cadastro.proprietario" label="É proprietário?" size="large" />
             <el-form-item v-if="cadastro.proprietario">
-              <el-input v-model="cadastro.senha" placeholder="CPF" />
+              <el-input v-model="cadastro.cpf" placeholder="CPF" />
             </el-form-item>
             <div class="all-terms">
               <div class="check-terms">
@@ -274,6 +274,14 @@ function scrollToElement(option: string) {
 
 .modal-info {
   display: flex;
+  padding: 8px 32px;
+  justify-content: center;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.modal-register {
+  display: flex;
   padding: 20px 32px;
   flex-direction: column;
   gap: 16px;
@@ -323,7 +331,7 @@ footer img {
   width: 20vw !important;
 }
 
-.el-input__wrapper {
+.modal-register .modal-info .el-input__wrapper {
   box-shadow: none !important;
   border-bottom: solid 1px #d7d9dd;
 }
@@ -394,7 +402,7 @@ footer img {
   color: #282a2c !important;
 }
 
-.el-form-item {
-  margin-bottom: 8px !important;
+.modal-register .el-form-item {
+  margin-bottom: 8px;
 }
 </style>
