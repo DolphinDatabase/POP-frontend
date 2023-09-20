@@ -117,11 +117,25 @@ function initMap(): void {
           <h6>Latitude: {{ otherPos.lat.toFixed(2) }} Longitude: {{ otherPos.lng.toFixed(2) }}</h6>
         </div>
       </div>
-      <el-avatar :size="40" :src="beatriz" />
+      <div class="usr-options">
+        <el-dropdown>
+          <span class="el-dropdown-link">
+            <el-avatar :size="40" :src="beatriz" />
+          </span>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item disabled>Beatriz Medeiros</el-dropdown-item>
+              <el-dropdown-item disabled>Ajuda</el-dropdown-item>
+              <el-dropdown-item disabled>Configurações</el-dropdown-item>
+              <el-dropdown-item @click="$router.push('/')">Sair</el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
+      </div>
     </div>
     <div class="location-content">
       <input id="search" class="controls" type="text" placeholder="Pesquisar" />
-      <div id="map" style="height: 87vh"></div>
+      <div id="map" style="height: 86vh"></div>
     </div>
   </div>
   <footer>
@@ -188,7 +202,7 @@ footer img {
 
 .location h6 {
   margin: 0;
-  color: #9FA2A5;
+  color: #9fa2a5;
 }
 .location h4 {
   margin: 0;
