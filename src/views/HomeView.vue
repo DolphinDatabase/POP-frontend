@@ -3,6 +3,7 @@ import PrincipalHome from '@/components/Home/PrincipalHome.vue'
 import { ref } from 'vue'
 import SolutionsCarousel from '@/components/Home/SolutionsCarousel.vue'
 import TeamDetails from '@/components/Home/TeamDetails.vue'
+import api from '@/services/api'
 
 const options = ref(['Início', 'Solução', 'Sobre'])
 const chooseOpt = ref('Início')
@@ -19,7 +20,7 @@ const cadastro = ref({
   email: '',
   senha: '',
   proprietario: false,
-  cpf: '',
+  doc: '',
   termos: false,
   privacidade: false
 })
@@ -43,6 +44,19 @@ function scrollToElement(option: string) {
   if (element) {
     element.scrollIntoView({ behavior: 'smooth' })
   }
+}
+
+function handleRegister(){
+  api.post('usuario',{
+    nome:cadastro.value.nome,
+    doc:(cadastro.value.proprietario)?cadastro.value.doc:'',
+    email:cadastro.value.email,
+    proprietario:cadastro.value.proprietario,
+    senha:cadastro.value.senha
+  })
+  .then(()=>{
+    alert("novo usuario")
+  })
 }
 </script>
 
@@ -170,7 +184,7 @@ function scrollToElement(option: string) {
             </el-form-item>
             <el-checkbox v-model="cadastro.proprietario" label="É proprietário?" size="large" />
             <el-form-item v-if="cadastro.proprietario">
-              <el-input v-model="cadastro.cpf" placeholder="CPF" />
+              <el-input v-model="cadastro.doc" placeholder="CPF" />
             </el-form-item>
             <div class="all-terms">
               <div class="check-terms">
@@ -194,7 +208,7 @@ function scrollToElement(option: string) {
         </div>
         <div class="login-btn">
           <div>
-            <el-button type="primary" round>Criar conta</el-button>
+            <el-button type="primary" round @click="handleRegister()">Criar conta</el-button>
           </div>
         </div>
       </div>
