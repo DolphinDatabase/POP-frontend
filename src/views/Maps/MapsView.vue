@@ -1,33 +1,75 @@
 <script setup lang="ts">
 import { onMounted, ref, onUnmounted, computed } from 'vue'
-import beatriz from '@/assets/team/beatriz.jpg'
+import useGeolocation from '@/services/useGeolocation'
+import api from '@/services/api'
 
 const placeDetail = ref()
+const { coords } = useGeolocation()
+const glebasCoord = ref()
 const currPos = computed(() => ({
   lat: -14.235004,
   lng: -51.92528
 }))
 const otherPos = ref()
 const clickListener = ref()
+const avatar = 'https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png'
+
 onMounted(async () => {
   initMap()
+  glebasTeste()
 })
 
 onUnmounted(async () => {
   if (clickListener.value) clickListener.value.remove()
 })
 
+async function glebasTeste() {
+  await api
+    .get('gleba')
+    .then((response) => {
+      let teste = response.data.features
+      teste.forEach((t: any) => {
+        let g = t.geometry.coordinates
+        console.log(g)
+        
+      })
+
+    })
+}
+
 function initMap(): void {
   const mapElement = document.getElementById('map')
   const input = document.getElementById('search') as HTMLInputElement
   const searchBox = new google.maps.places.SearchBox(input)
-
+  let infoWindow: google.maps.InfoWindow
   if (mapElement) {
-    const map = new google.maps.Map(mapElement, {
+    var map = new google.maps.Map(mapElement, {
       center: currPos.value,
       zoom: 5,
       mapTypeId: 'hybrid'
     })
+    const triangleCoords = [
+      { lat: 25.774, lng: -80.19 },
+      { lat: 18.466, lng: -66.118 },
+      { lat: 32.321, lng: -64.757 },
+      { lat: 25.774, lng: -80.19 }
+    ]
+
+    const bermudaTriangle = new google.maps.Polygon({
+      paths: triangleCoords,
+      strokeColor: '#FF0000',
+      strokeOpacity: 0.8,
+      strokeWeight: 2,
+      fillColor: '#FF0000',
+      fillOpacity: 0.35
+    })
+
+    bermudaTriangle.setMap(map)
+
+    bermudaTriangle.addListener('click', showArrays)
+
+    infoWindow = new google.maps.InfoWindow()
+
     map.data.setStyle((feature) => {
       return {
         title: feature.getProperty('name'),
@@ -103,24 +145,53 @@ function initMap(): void {
       map.fitBounds(bounds)
     })
   }
+
+  function showArrays(event: any) {
+    // Since this polygon has only one path, we can call getPath() to return the
+    // MVCArray of LatLngs.
+    // @ts-ignore
+    const polygon = this as google.maps.Polygon
+    const vertices = polygon.getPath()
+
+    let contentString =
+      '<b>Bermuda Triangle polygon</b><br>' +
+      'Clicked location: <br>' +
+      event.latLng.lat() +
+      ',' +
+      event.latLng.lng() +
+      '<br>'
+
+    // Iterate over the vertices.
+    for (let i = 0; i < vertices.getLength(); i++) {
+      const xy = vertices.getAt(i)
+
+      contentString += '<br>' + 'Coordinate ' + i + ':<br>' + xy.lat() + ',' + xy.lng()
+    }
+
+    // Replace the info window's content and position.
+    infoWindow.setContent(contentString)
+    infoWindow.setPosition(event.latLng)
+
+    infoWindow.open(map)
+  }
 }
 </script>
 <template>
   <div>
     <div class="location-container">
       <div class="location">
-        <div class="loc-address">
+        <!-- <div class="loc-address">
           <el-icon><LocationFilled /></el-icon>
           <h4>{{ placeDetail }}</h4>
         </div>
         <div v-if="otherPos">
           <h6>Latitude: {{ otherPos.lat.toFixed(2) }} Longitude: {{ otherPos.lng.toFixed(2) }}</h6>
-        </div>
+        </div> -->
       </div>
       <div class="usr-options">
         <el-dropdown>
           <span class="el-dropdown-link">
-            <el-avatar :size="40" :src="beatriz" />
+            <el-avatar :size="40" :src="avatar" />
           </span>
           <template #dropdown>
             <el-dropdown-menu>
@@ -216,4 +287,25 @@ footer img {
 .gmnoprint {
   display: none;
 }
+
+#search {
+  position: fixed !important;
+  width: 420px;
+}
+
+/* .gm-style-iw.gm-style-iw-c {
+  background-color: #ef5350;
+}
+.gm-style-iw.gm-style-iw-c .gm-style-iw-d{
+  background-color: #ef5350;
+  overflow: hidden !important;
+}
+
+.gm-style .gm-style-iw-tc::after {
+  background-color: #ef5350;
+}
+
+.gm-style-iw-d {
+  overflow: hidden;
+} */
 </style>

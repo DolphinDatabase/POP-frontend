@@ -88,8 +88,6 @@ function handleLogin() {
     })
     .then((data) => {
       storeToken(data.access_token, data.expire)
-      console.log(authStore.token)
-      console.log(authStore.tokenExpiration)
     })
 }
 </script>
