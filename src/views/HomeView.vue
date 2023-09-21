@@ -5,12 +5,16 @@ import SolutionsCarousel from '@/components/Home/SolutionsCarousel.vue'
 import TeamDetails from '@/components/Home/TeamDetails.vue'
 import api from '@/services/api'
 import router from '@/router'
+import { useAuthStore } from '@/store/auth'
 
+const authStore = useAuthStore()
 const options = ref(['Início', 'Solução', 'Sobre'])
 const chooseOpt = ref('Início')
 const loginModal = ref(false)
 const cadastroModal = ref(false)
-const token = ref('')
+const storeToken = (token: string, expiration: number) => {
+  authStore.setToken(token, expiration)
+}
 
 const login = ref({
   username: '',
@@ -67,7 +71,7 @@ function handleLogin() {
 
   formData.append('username', login.value.username)
   formData.append('password', login.value.password)
-  
+
   api
     .post('auth', formData, {
       headers: {
@@ -83,7 +87,9 @@ function handleLogin() {
       }
     })
     .then((data) => {
-      console.log(data.access_token)
+      storeToken(data.access_token, data.expire)
+      console.log(authStore.token)
+      console.log(authStore.tokenExpiration)
     })
 }
 </script>
