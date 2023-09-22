@@ -2,7 +2,9 @@
 import { onMounted, ref, onUnmounted, computed } from 'vue'
 import useGeolocation from '@/services/useGeolocation'
 import api from '@/services/api'
+import Feature from '@/types/feature'
 
+const glebas = ref({ type: 'FeatureCollection', features: new Array<Feature>() })
 const placeDetail = ref()
 const { coords } = useGeolocation()
 const glebasCoord = ref()
@@ -15,8 +17,9 @@ const clickListener = ref()
 const avatar = 'https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png'
 
 onMounted(async () => {
+  await glebasTeste()
+  console.log(glebas.value)
   initMap()
-  glebasTeste()
 })
 
 onUnmounted(async () => {
@@ -24,17 +27,10 @@ onUnmounted(async () => {
 })
 
 async function glebasTeste() {
-  await api
-    .get('gleba')
-    .then((response) => {
-      let teste = response.data.features
-      teste.forEach((t: any) => {
-        let g = t.geometry.coordinates
-        console.log(g)
-        
-      })
-
-    })
+  await api.get('gleba').then((response) => {
+    const geojsonData = response.data
+    glebasCoord.value = geojsonData
+  })
 }
 
 function initMap(): void {
@@ -42,31 +38,29 @@ function initMap(): void {
   const input = document.getElementById('search') as HTMLInputElement
   const searchBox = new google.maps.places.SearchBox(input)
   let infoWindow: google.maps.InfoWindow
+
+  function get_glebas(page: number = 1) {
+    let step = 1000
+    let limit = page * step
+    let init = limit - step
+    api.get(`gleba?skip=${init}&limit=${limit}`).then((res) => {
+      if (res.data.features.length > 0) {
+        map.data.addGeoJson(res.data)
+        get_glebas(page+1)
+      }
+    })
+  }
+
   if (mapElement) {
     var map = new google.maps.Map(mapElement, {
       center: currPos.value,
       zoom: 5,
       mapTypeId: 'hybrid'
     })
-    const triangleCoords = [
-      { lat: 25.774, lng: -80.19 },
-      { lat: 18.466, lng: -66.118 },
-      { lat: 32.321, lng: -64.757 },
-      { lat: 25.774, lng: -80.19 }
-    ]
 
-    const bermudaTriangle = new google.maps.Polygon({
-      paths: triangleCoords,
-      strokeColor: '#FF0000',
-      strokeOpacity: 0.8,
-      strokeWeight: 2,
-      fillColor: '#FF0000',
-      fillOpacity: 0.35
-    })
+    get_glebas()
 
-    bermudaTriangle.setMap(map)
-
-    bermudaTriangle.addListener('click', showArrays)
+    // bermudaTriangle.addListener('click', showArrays)
 
     infoWindow = new google.maps.InfoWindow()
 
