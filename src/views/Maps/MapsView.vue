@@ -18,7 +18,6 @@ const avatar = 'https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.
 
 onMounted(async () => {
   await glebasTeste()
-  console.log(glebas.value)
   initMap()
 })
 
@@ -37,6 +36,7 @@ function initMap(): void {
   const mapElement = document.getElementById('map')
   const input = document.getElementById('search') as HTMLInputElement
   const searchBox = new google.maps.places.SearchBox(input)
+  const geocoder = new google.maps.Geocoder();
   let infoWindow: google.maps.InfoWindow
 
   function get_glebas(page: number = 1) {
@@ -46,7 +46,7 @@ function initMap(): void {
     api.get(`gleba?skip=${init}&limit=${limit}`).then((res) => {
       if (res.data.features.length > 0) {
         map.data.addGeoJson(res.data)
-        get_glebas(page+1)
+        get_glebas(page + 1)
       }
     })
   }
@@ -58,9 +58,7 @@ function initMap(): void {
       mapTypeId: 'hybrid'
     })
 
-    get_glebas()
-
-    // bermudaTriangle.addListener('click', showArrays)
+    // get_glebas()
 
     infoWindow = new google.maps.InfoWindow()
 
@@ -70,10 +68,27 @@ function initMap(): void {
         optimized: false
       }
     })
-    clickListener.value = map.addListener(
-      'click',
-      ({ latLng: { lat, lng } }) => (otherPos.value = { lat: lat(), lng: lng() })
-    )
+    clickListener.value = map.addListener('click', (mapsMouseEvent) => {
+      geocoder.geocode({ location: mapsMouseEvent.latLng }, (results, status) => {
+        if (status === 'OK') {
+          if (results[0]) {
+            const addressComponents = results[0].address_components
+            let state = ''
+            for (const component of addressComponents) {
+              if (component.types.includes('administrative_area_level_1')) {
+                state = component.short_name
+                break
+              }
+            }
+            placeDetail.value = state
+          } else {
+            console.error('No results found')
+          }
+        } else {
+          console.error(`Geocoder failed due to: ${status}`)
+        }
+      })
+    })
     map.controls[google.maps.ControlPosition.LEFT_TOP].push(input)
 
     // Bias the SearchBox results towards current map's viewport.
@@ -89,7 +104,7 @@ function initMap(): void {
       const places = searchBox.getPlaces()
 
       places.forEach((p) => {
-        placeDetail.value = p.formatted_address
+        console.log(p.formatted_address)
       })
 
       if (places.length == 0) {
