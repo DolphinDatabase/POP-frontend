@@ -44,6 +44,7 @@ router.beforeEach((to, from, next) => {
 
   if (to.meta.requiresAuth) {
     if (isAuthenticated) {
+      to.meta.token = authStore.token
       next()
     } else {
       next({ name: 'home' })
@@ -53,6 +54,7 @@ router.beforeEach((to, from, next) => {
   }
 
   if (isAuthenticated && Date.now() >= tokenExpiration) {
+    console.log('aqui')
     authStore.setToken('', 0)
     next({ name: 'login' })
   }

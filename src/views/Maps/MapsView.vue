@@ -3,11 +3,13 @@ import { onMounted, ref, onUnmounted, computed } from 'vue'
 import useGeolocation from '@/services/useGeolocation'
 import api from '@/services/api'
 import Feature from '@/types/feature'
+import { useRoute } from 'vue-router';
 
 const glebas = ref({ type: 'FeatureCollection', features: new Array<Feature>() })
 const placeDetail = ref()
 const { coords } = useGeolocation()
 const glebasCoord = ref()
+const token = ref()
 const currPos = computed(() => ({
   lat: -14.235004,
   lng: -51.92528
@@ -17,7 +19,8 @@ const clickListener = ref()
 const avatar = 'https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png'
 
 onMounted(async () => {
-  await glebasTeste()
+  const route = useRoute()
+  token.value = route.meta.token
   initMap()
 })
 
@@ -25,12 +28,6 @@ onUnmounted(async () => {
   if (clickListener.value) clickListener.value.remove()
 })
 
-async function glebasTeste() {
-  await api.get('gleba').then((response) => {
-    const geojsonData = response.data
-    glebasCoord.value = geojsonData
-  })
-}
 
 function initMap(): void {
   const mapElement = document.getElementById('map')
@@ -39,14 +36,14 @@ function initMap(): void {
   const geocoder = new google.maps.Geocoder();
   let infoWindow: google.maps.InfoWindow
 
-  function get_glebas(page: number = 1) {
+  function get_glebas(estado:string,page: number = 1) {
     let step = 1000
     let limit = page * step
     let init = limit - step
-    api.get(`gleba?skip=${init}&limit=${limit}`).then((res) => {
+    api.get(`gleba/estado/${estado}?skip=${init}&limit=${limit}`,{headers:{Authorization:`Bearer ${token.value}`}}).then((res) => {
       if (res.data.features.length > 0) {
         map.data.addGeoJson(res.data)
-        get_glebas(page + 1)
+        get_glebas(estado,page + 1)
       }
     })
   }
@@ -80,7 +77,7 @@ function initMap(): void {
                 break
               }
             }
-            placeDetail.value = state
+            get_glebas(state)
           } else {
             console.error('No results found')
           }
