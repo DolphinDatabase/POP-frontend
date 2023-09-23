@@ -3,6 +3,7 @@ import { onMounted, ref, onUnmounted, computed } from 'vue'
 import api from '@/services/api'
 import { useRoute } from 'vue-router'
 
+const user = ref({nome:""})
 const token = ref()
 const currPos = computed(() => ({
   lat: -14.235004,
@@ -16,6 +17,11 @@ onMounted(async () => {
   const route = useRoute()
   token.value = route.meta.token
   initMap()
+  var res = await api.get("/auth", {
+    headers: { Authorization: `Bearer ${token.value}` }
+  })
+  user.value = res.data
+  console.log(user)
 })
 
 onUnmounted(async () => {
@@ -210,7 +216,7 @@ function initMap(): void {
           </span>
           <template #dropdown>
             <el-dropdown-menu>
-              <el-dropdown-item disabled>Beatriz Medeiros</el-dropdown-item>
+              <el-dropdown-item disabled>{{ user.nome }}</el-dropdown-item>
               <el-dropdown-item disabled>Ajuda</el-dropdown-item>
               <el-dropdown-item disabled>Configurações</el-dropdown-item>
               <el-dropdown-item @click="$router.push('/')">Sair</el-dropdown-item>
