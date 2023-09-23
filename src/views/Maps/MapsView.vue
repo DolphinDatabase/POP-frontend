@@ -90,17 +90,32 @@ function initMap(): void {
             infoWindow.close();
           }
           let op = data.data
-          let content = `<div><p><b>Início plantio:</b> ${op.inicio_plantio}</br>`
+          let content = `<div style='display:grid;grid-template-columns: 1fr 1fr;gap:15px'>`
+          content += `<div>`
+          content += `<p><b>Início plantio:</b> ${op.inicio_plantio}</br>`
           content += `<b>Fim plantio:</b> ${op.fim_plantio}</br>`
           content += `<b>Início colheita:</b> ${op.inicio_colheita}</br>`
           content += `<b>Fim colheita:</b> ${op.fim_colheita}</br>`
           content += `<b>Estado:</b> ${op.estado.descricao}</br>`
           content += `<b>Município:</b> ${op.municipio.descricao}</br>`
+          content += `</br><b>Sistema de produção Agrícola:</b></br>`
           content += `<b>Tipo Solo:</b> ${op.solo.descricao}</br>`
           content += `<b>Irrigação:</b> ${op.irrigacao.descricao}</br>`
           content += `<b>Tipo cultivo:</b> ${op.cultivo.descricao}</br>`
           content += `<b>Grão/Semente:</b> ${op.grao_semente.descricao}</br>`
-          content += `<b>Ciclo do cultivar:</b> ${op.ciclo.descricao}</br>`
+          content += `<b>Ciclo do cultivar:</b> ${op.ciclo.descricao}</p>`
+          content += `</div>`
+          content += `<div>`
+          content += `<p><b>Empreendimento:</b></br>`
+          content += `<b>Cesta: </b>${op.empreendimento.cesta}</br>`
+          content += `<b>Zoneamento: </b>${op.empreendimento.zoneamento}</br>`
+          content += `<b>Variedade: </b>${op.empreendimento.variedade}</br>`
+          content += `<b>Produto: </b>${op.empreendimento.produto}</br>`
+          content += `<b>Modalidade: </b>${op.empreendimento.modalidade}</br>`
+          content += `<b>Atividade: </b>${op.empreendimento.atividade}</br>`
+          content += `<b>Finalidade: </b>${op.empreendimento.finalidade}</p>`
+          content += `</div>`
+          content += `</div>`
           infoWindow = new google.maps.InfoWindow({
             content: content,
           });
