@@ -3,6 +3,7 @@ import { onMounted, ref, onUnmounted, computed } from 'vue'
 import api from '@/services/api'
 import { useRoute } from 'vue-router'
 
+const user = ref({nome:""})
 const token = ref()
 const currPos = computed(() => ({
   lat: -14.235004,
@@ -16,6 +17,11 @@ onMounted(async () => {
   const route = useRoute()
   token.value = route.meta.token
   initMap()
+  var res = await api.get("/auth", {
+    headers: { Authorization: `Bearer ${token.value}` }
+  })
+  user.value = res.data
+  console.log(user)
 })
 
 onUnmounted(async () => {
@@ -49,18 +55,81 @@ function initMap(): void {
       maxZoom: 18
     })
 
+    const geoJsonStyle = {
+      fillColor: 'white',      // Fill color
+      strokeColor: 'white',     // Stroke color
+      strokeWeight: 2,        // Stroke weight
+      // You can add more styling options here
+    };
+
     infoWindow = new google.maps.InfoWindow()
 
-    map.data.setStyle((feature) => {
-      return {
-        title: feature.getProperty('name'),
-        optimized: false
-      }
+    map.data.setStyle(() => {
+      return geoJsonStyle
     })
+
     latLngListener.value = map.addListener(
       'click',
-      ({ latLng: { lat, lng } }) => (get_glebas(lat(),lng()))
+      ({ latLng: { lat, lng } }) => {
+        console.log("ok")
+        get_glebas(lat(),lng())
+      }
     )
+
+    map.data.addListener('click', (event) => {
+      const properties = event.feature.h;
+
+      if (infoWindow) {
+        infoWindow.close();
+      }
+      infoWindow = new google.maps.InfoWindow({
+        content: `<div>loading...</div>`, // Customize the content as needed
+      });
+      infoWindow.setPosition(event.latLng);
+      infoWindow.open(map);
+      api.get(`operacao/${properties.operacao_id}`, {
+        headers: { Authorization: `Bearer ${token.value}` }
+      })
+      .then((data)=>{
+        if(data.status==200){
+          if (infoWindow) {
+            infoWindow.close();
+          }
+          let op = data.data
+          let content = `<div style='display:grid;grid-template-columns: 1fr 1fr;gap:15px'>`
+          content += `<div>`
+          content += `<p><b>Início plantio:</b> ${op.inicio_plantio}</br>`
+          content += `<b>Fim plantio:</b> ${op.fim_plantio}</br>`
+          content += `<b>Início colheita:</b> ${op.inicio_colheita}</br>`
+          content += `<b>Fim colheita:</b> ${op.fim_colheita}</br>`
+          content += `<b>Estado:</b> ${op.estado.descricao}</br>`
+          content += `<b>Município:</b> ${op.municipio.descricao}</br>`
+          content += `</br><b>Sistema de produção Agrícola:</b></br>`
+          content += `<b>Tipo Solo:</b> ${op.solo.descricao}</br>`
+          content += `<b>Irrigação:</b> ${op.irrigacao.descricao}</br>`
+          content += `<b>Tipo cultivo:</b> ${op.cultivo.descricao}</br>`
+          content += `<b>Grão/Semente:</b> ${op.grao_semente.descricao}</br>`
+          content += `<b>Ciclo do cultivar:</b> ${op.ciclo.descricao}</p>`
+          content += `</div>`
+          content += `<div>`
+          content += `<p><b>Empreendimento:</b></br>`
+          content += `<b>Cesta: </b>${op.empreendimento.cesta}</br>`
+          content += `<b>Zoneamento: </b>${op.empreendimento.zoneamento}</br>`
+          content += `<b>Variedade: </b>${op.empreendimento.variedade}</br>`
+          content += `<b>Produto: </b>${op.empreendimento.produto}</br>`
+          content += `<b>Modalidade: </b>${op.empreendimento.modalidade}</br>`
+          content += `<b>Atividade: </b>${op.empreendimento.atividade}</br>`
+          content += `<b>Finalidade: </b>${op.empreendimento.finalidade}</p>`
+          content += `</div>`
+          content += `</div>`
+          infoWindow = new google.maps.InfoWindow({
+            content: content,
+          });
+          infoWindow.setPosition(event.latLng);
+          infoWindow.open(map);
+        }
+      })
+    })
 
     map.controls[google.maps.ControlPosition.LEFT_TOP].push(input)
 
@@ -123,35 +192,6 @@ function initMap(): void {
       map.fitBounds(bounds)
     })
   }
-
-  function showArrays(event: any) {
-    // Since this polygon has only one path, we can call getPath() to return the
-    // MVCArray of LatLngs.
-    // @ts-ignore
-    const polygon = this as google.maps.Polygon
-    const vertices = polygon.getPath()
-
-    let contentString =
-      '<b>Bermuda Triangle polygon</b><br>' +
-      'Clicked location: <br>' +
-      event.latLng.lat() +
-      ',' +
-      event.latLng.lng() +
-      '<br>'
-
-    // Iterate over the vertices.
-    for (let i = 0; i < vertices.getLength(); i++) {
-      const xy = vertices.getAt(i)
-
-      contentString += '<br>' + 'Coordinate ' + i + ':<br>' + xy.lat() + ',' + xy.lng()
-    }
-
-    // Replace the info window's content and position.
-    infoWindow.setContent(contentString)
-    infoWindow.setPosition(event.latLng)
-
-    infoWindow.open(map)
-  }
 }
 </script>
 <template>
@@ -176,7 +216,7 @@ function initMap(): void {
           </span>
           <template #dropdown>
             <el-dropdown-menu>
-              <el-dropdown-item disabled>Beatriz Medeiros</el-dropdown-item>
+              <el-dropdown-item disabled>{{ user.nome }}</el-dropdown-item>
               <el-dropdown-item disabled>Ajuda</el-dropdown-item>
               <el-dropdown-item disabled>Configurações</el-dropdown-item>
               <el-dropdown-item @click="$router.push('/')">Sair</el-dropdown-item>
