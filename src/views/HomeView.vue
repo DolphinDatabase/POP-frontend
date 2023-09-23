@@ -4,15 +4,21 @@ import { ref } from 'vue'
 import SolutionsCarousel from '@/components/Home/SolutionsCarousel.vue'
 import TeamDetails from '@/components/Home/TeamDetails.vue'
 import api from '@/services/api'
+import router from '@/router'
+import { useAuthStore } from '@/store/auth'
 
+const authStore = useAuthStore()
 const options = ref(['Início', 'Solução', 'Sobre'])
 const chooseOpt = ref('Início')
 const loginModal = ref(false)
 const cadastroModal = ref(false)
+const storeToken = (token: string, expiration: number) => {
+  authStore.setToken(token, expiration)
+}
 
 const login = ref({
-  email: '',
-  senha: ''
+  username: '',
+  password: ''
 })
 
 const cadastro = ref({
@@ -46,17 +52,43 @@ function scrollToElement(option: string) {
   }
 }
 
-function handleRegister(){
-  api.post('usuario',{
-    nome:cadastro.value.nome,
-    doc:(cadastro.value.proprietario)?cadastro.value.doc:'',
-    email:cadastro.value.email,
-    proprietario:cadastro.value.proprietario,
-    senha:cadastro.value.senha
-  })
-  .then(()=>{
-    alert("novo usuario")
-  })
+function handleRegister() {
+  api
+    .post('usuario', {
+      nome: cadastro.value.nome,
+      doc: cadastro.value.proprietario ? cadastro.value.doc : '',
+      email: cadastro.value.email,
+      proprietario: cadastro.value.proprietario,
+      senha: cadastro.value.senha
+    })
+    .then(() => {
+      alert('novo usuario')
+    })
+}
+
+function handleLogin() {
+  const formData = new FormData()
+
+  formData.append('username', login.value.username)
+  formData.append('password', login.value.password)
+
+  api
+    .post('auth', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    })
+    .then((response) => {
+      if (response.status == 200) {
+        router.push('/maps')
+        return response.data
+      } else {
+        alert('Dados incorretos! Tente novamente')
+      }
+    })
+    .then((data) => {
+      storeToken(data.access_token, data.expire)
+    })
 }
 </script>
 
@@ -131,16 +163,21 @@ function handleRegister(){
         <div>
           <el-form :model="login" label-width="120px" label-position="top">
             <el-form-item>
-              <el-input v-model="login.email" placeholder="Email" />
+              <el-input v-model="login.username" placeholder="Email" />
             </el-form-item>
             <el-form-item>
-              <el-input v-model="login.senha" placeholder="Senha" />
+              <el-input
+                v-model="login.password"
+                placeholder="Senha"
+                type="password"
+                show-password
+              />
             </el-form-item>
           </el-form>
         </div>
         <div class="login-btn">
           <div>
-            <el-button type="primary" round>Entrar</el-button>
+            <el-button type="primary" round @click="handleLogin()">Entrar</el-button>
           </div>
           <div style="display: 'flex'">
             <p>ou</p>
@@ -180,7 +217,12 @@ function handleRegister(){
               <el-input v-model="cadastro.email" placeholder="Email" />
             </el-form-item>
             <el-form-item>
-              <el-input v-model="cadastro.senha" placeholder="Senha" type="password" show-password/>
+              <el-input
+                v-model="cadastro.senha"
+                placeholder="Senha"
+                type="password"
+                show-password
+              />
             </el-form-item>
             <el-checkbox v-model="cadastro.proprietario" label="É proprietário?" size="large" />
             <el-form-item v-if="cadastro.proprietario">

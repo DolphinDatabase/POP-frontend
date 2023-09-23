@@ -1,43 +1,67 @@
 <script setup lang="ts">
 import { onMounted, ref, onUnmounted, computed } from 'vue'
-import beatriz from '@/assets/team/beatriz.jpg'
+import api from '@/services/api'
+import { useRoute } from 'vue-router'
 
-const placeDetail = ref()
+const token = ref()
 const currPos = computed(() => ({
   lat: -14.235004,
   lng: -51.92528
 }))
 const otherPos = ref()
-const clickListener = ref()
+const latLngListener = ref()
+const avatar = 'https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png'
+
 onMounted(async () => {
+  const route = useRoute()
+  token.value = route.meta.token
   initMap()
 })
 
 onUnmounted(async () => {
-  if (clickListener.value) clickListener.value.remove()
+  if (latLngListener.value) latLngListener.value.remove()
 })
 
 function initMap(): void {
   const mapElement = document.getElementById('map')
   const input = document.getElementById('search') as HTMLInputElement
   const searchBox = new google.maps.places.SearchBox(input)
+  let infoWindow: google.maps.InfoWindow
+
+  function get_glebas(lat:number,long:number) {
+    api
+      .get(`gleba/location?lat=${lat}&long=${long}`, {
+        headers: { Authorization: `Bearer ${token.value}` }
+      })
+      .then((res) => {
+        if (res.data.features.length > 0) {
+          map.data.addGeoJson(res.data)
+        }
+      })
+  }
 
   if (mapElement) {
-    const map = new google.maps.Map(mapElement, {
+    var map = new google.maps.Map(mapElement, {
       center: currPos.value,
       zoom: 5,
-      mapTypeId: 'hybrid'
+      mapTypeId: 'hybrid',
+      minZoom: 6,
+      maxZoom: 18
     })
+
+    infoWindow = new google.maps.InfoWindow()
+
     map.data.setStyle((feature) => {
       return {
         title: feature.getProperty('name'),
         optimized: false
       }
     })
-    clickListener.value = map.addListener(
+    latLngListener.value = map.addListener(
       'click',
-      ({ latLng: { lat, lng } }) => (otherPos.value = { lat: lat(), lng: lng() })
+      ({ latLng: { lat, lng } }) => (get_glebas(lat(),lng()))
     )
+
     map.controls[google.maps.ControlPosition.LEFT_TOP].push(input)
 
     // Bias the SearchBox results towards current map's viewport.
@@ -51,10 +75,6 @@ function initMap(): void {
     // more details for that place.
     searchBox.addListener('places_changed', () => {
       const places = searchBox.getPlaces()
-
-      places.forEach((p) => {
-        placeDetail.value = p.formatted_address
-      })
 
       if (places.length == 0) {
         return
@@ -103,24 +123,56 @@ function initMap(): void {
       map.fitBounds(bounds)
     })
   }
+
+  function showArrays(event: any) {
+    // Since this polygon has only one path, we can call getPath() to return the
+    // MVCArray of LatLngs.
+    // @ts-ignore
+    const polygon = this as google.maps.Polygon
+    const vertices = polygon.getPath()
+
+    let contentString =
+      '<b>Bermuda Triangle polygon</b><br>' +
+      'Clicked location: <br>' +
+      event.latLng.lat() +
+      ',' +
+      event.latLng.lng() +
+      '<br>'
+
+    // Iterate over the vertices.
+    for (let i = 0; i < vertices.getLength(); i++) {
+      const xy = vertices.getAt(i)
+
+      contentString += '<br>' + 'Coordinate ' + i + ':<br>' + xy.lat() + ',' + xy.lng()
+    }
+
+    // Replace the info window's content and position.
+    infoWindow.setContent(contentString)
+    infoWindow.setPosition(event.latLng)
+
+    infoWindow.open(map)
+  }
 }
 </script>
 <template>
   <div>
     <div class="location-container">
       <div class="location">
-        <div class="loc-address">
+        <!-- <div class="loc-address">
           <el-icon><LocationFilled /></el-icon>
           <h4>{{ placeDetail }}</h4>
         </div>
         <div v-if="otherPos">
           <h6>Latitude: {{ otherPos.lat.toFixed(2) }} Longitude: {{ otherPos.lng.toFixed(2) }}</h6>
-        </div>
+        </div> -->
       </div>
       <div class="usr-options">
+        <div v-if="otherPos">
+          <h6>Latitude: {{ otherPos.lat.toFixed(2) }} Longitude: {{ otherPos.lng.toFixed(2) }}</h6>
+        </div>
         <el-dropdown>
           <span class="el-dropdown-link">
-            <el-avatar :size="40" :src="beatriz" />
+            <el-avatar :size="40" :src="avatar" />
           </span>
           <template #dropdown>
             <el-dropdown-menu>
@@ -216,4 +268,25 @@ footer img {
 .gmnoprint {
   display: none;
 }
+
+#search {
+  position: fixed !important;
+  width: 420px;
+}
+
+/* .gm-style-iw.gm-style-iw-c {
+  background-color: #ef5350;
+}
+.gm-style-iw.gm-style-iw-c .gm-style-iw-d{
+  background-color: #ef5350;
+  overflow: hidden !important;
+}
+
+.gm-style .gm-style-iw-tc::after {
+  background-color: #ef5350;
+}
+
+.gm-style-iw-d {
+  overflow: hidden;
+} */
 </style>
