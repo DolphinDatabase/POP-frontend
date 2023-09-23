@@ -4,6 +4,7 @@ import TermsView from '../views/Terms/TermsView.vue'
 import PoliticsView from '../views/Terms/PoliticsView.vue'
 import MapsView from '@/views/Maps/MapsView.vue'
 import { useAuthStore } from '@/store/auth'
+import api from '@/services/api'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -46,6 +47,25 @@ router.beforeEach((to, from, next) => {
     if (isAuthenticated) {
       to.meta.token = authStore.token
       next()
+      const now = Date.now()
+      const expirationTime = new Date(tokenExpiration).getTime()
+      const timeUntilExpiration = now - expirationTime
+      const tokenAboutToExpire = timeUntilExpiration <= 5 * 60 * 1000
+      if (tokenAboutToExpire) {
+        const usersChoice = confirm('Sua sessão vai expirar! Deseja continuar conectado?')
+        if (usersChoice) {
+          try {
+            api.put('auth', {
+              headers: { Authorization: `Bearer ${authStore.token}` }
+            })
+          } catch (error) {
+            console.error('Token refresh failed:', error)
+            authStore.setToken('', 0)
+            next({ name: 'home' })
+            return
+          }
+        }
+      }
     } else {
       next({ name: 'home' })
     }
@@ -54,9 +74,8 @@ router.beforeEach((to, from, next) => {
   }
 
   if (isAuthenticated && Date.now() >= tokenExpiration) {
-    console.log('aqui')
     authStore.setToken('', 0)
-    next({ name: 'login' })
+    next({ name: 'home' })
   }
 })
 
