@@ -1,21 +1,15 @@
 <script setup lang="ts">
 import { onMounted, ref, onUnmounted, computed } from 'vue'
-import useGeolocation from '@/services/useGeolocation'
 import api from '@/services/api'
-import Feature from '@/types/feature'
-import { useRoute } from 'vue-router';
+import { useRoute } from 'vue-router'
 
-const glebas = ref({ type: 'FeatureCollection', features: new Array<Feature>() })
-const placeDetail = ref()
-const { coords } = useGeolocation()
-const glebasCoord = ref()
 const token = ref()
 const currPos = computed(() => ({
   lat: -14.235004,
   lng: -51.92528
 }))
 const otherPos = ref()
-const clickListener = ref()
+const latLngListener = ref()
 const avatar = 'https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png'
 
 onMounted(async () => {
@@ -25,37 +19,35 @@ onMounted(async () => {
 })
 
 onUnmounted(async () => {
-  if (clickListener.value) clickListener.value.remove()
+  if (latLngListener.value) latLngListener.value.remove()
 })
-
 
 function initMap(): void {
   const mapElement = document.getElementById('map')
   const input = document.getElementById('search') as HTMLInputElement
   const searchBox = new google.maps.places.SearchBox(input)
-  const geocoder = new google.maps.Geocoder();
   let infoWindow: google.maps.InfoWindow
 
-  function get_glebas(estado:string,page: number = 1) {
-    let step = 1000
-    let limit = page * step
-    let init = limit - step
-    api.get(`gleba/estado/${estado}?skip=${init}&limit=${limit}`,{headers:{Authorization:`Bearer ${token.value}`}}).then((res) => {
-      if (res.data.features.length > 0) {
-        map.data.addGeoJson(res.data)
-        get_glebas(estado,page + 1)
-      }
-    })
+  function get_glebas(lat:number,long:number) {
+    api
+      .get(`gleba/location?lat=${lat}&long=${long}`, {
+        headers: { Authorization: `Bearer ${token.value}` }
+      })
+      .then((res) => {
+        if (res.data.features.length > 0) {
+          map.data.addGeoJson(res.data)
+        }
+      })
   }
 
   if (mapElement) {
     var map = new google.maps.Map(mapElement, {
       center: currPos.value,
       zoom: 5,
-      mapTypeId: 'hybrid'
+      mapTypeId: 'hybrid',
+      minZoom: 6,
+      maxZoom: 18
     })
-
-    // get_glebas()
 
     infoWindow = new google.maps.InfoWindow()
 
@@ -65,27 +57,11 @@ function initMap(): void {
         optimized: false
       }
     })
-    clickListener.value = map.addListener('click', (mapsMouseEvent) => {
-      geocoder.geocode({ location: mapsMouseEvent.latLng }, (results, status) => {
-        if (status === 'OK') {
-          if (results[0]) {
-            const addressComponents = results[0].address_components
-            let state = ''
-            for (const component of addressComponents) {
-              if (component.types.includes('administrative_area_level_1')) {
-                state = component.short_name
-                break
-              }
-            }
-            get_glebas(state)
-          } else {
-            console.error('No results found')
-          }
-        } else {
-          console.error(`Geocoder failed due to: ${status}`)
-        }
-      })
-    })
+    latLngListener.value = map.addListener(
+      'click',
+      ({ latLng: { lat, lng } }) => (get_glebas(lat(),lng()))
+    )
+
     map.controls[google.maps.ControlPosition.LEFT_TOP].push(input)
 
     // Bias the SearchBox results towards current map's viewport.
@@ -99,10 +75,6 @@ function initMap(): void {
     // more details for that place.
     searchBox.addListener('places_changed', () => {
       const places = searchBox.getPlaces()
-
-      places.forEach((p) => {
-        console.log(p.formatted_address)
-      })
 
       if (places.length == 0) {
         return
@@ -195,6 +167,9 @@ function initMap(): void {
         </div> -->
       </div>
       <div class="usr-options">
+        <div v-if="otherPos">
+          <h6>Latitude: {{ otherPos.lat.toFixed(2) }} Longitude: {{ otherPos.lng.toFixed(2) }}</h6>
+        </div>
         <el-dropdown>
           <span class="el-dropdown-link">
             <el-avatar :size="40" :src="avatar" />
