@@ -1,11 +1,24 @@
 <script setup lang="ts">
 import PrincipalHome from '@/components/Home/PrincipalHome.vue'
-import { ref } from 'vue'
+import { ref, reactive } from 'vue'
 import SolutionsCarousel from '@/components/Home/SolutionsCarousel.vue'
 import TeamDetails from '@/components/Home/TeamDetails.vue'
 import api from '@/services/api'
 import router from '@/router'
 import { useAuthStore } from '@/store/auth'
+import type { FormInstance, FormRules } from 'element-plus'
+
+interface CadastroForm {
+  nome: string
+  email: string
+  senha: string
+  proprietario: boolean
+  doc: string
+  termos: boolean
+  privacidade: boolean
+}
+
+const cadastroFormRef = ref<FormInstance>()
 
 const authStore = useAuthStore()
 const options = ref(['Início', 'Solução', 'Sobre'])
@@ -21,7 +34,7 @@ const login = ref({
   password: ''
 })
 
-const cadastro = ref({
+const cadastroForm = reactive<CadastroForm>({
   nome: '',
   email: '',
   senha: '',
@@ -29,6 +42,16 @@ const cadastro = ref({
   doc: '',
   termos: false,
   privacidade: false
+})
+
+const rules = reactive<FormRules<CadastroForm>>({
+  nome: [{ required: true, message: 'Por favor insira um nome.', trigger: 'blur' }],
+  email: [{ required: true, message: 'Por favor insira um email.', trigger: 'blur' }],
+  senha: [{ required: true, message: 'Por favor insira uma senha.', trigger: 'blur' }],
+  proprietario: [{ required: false }],
+  doc: [{ required: true, message: 'Por favor insira um CPF.', trigger: 'blur' }],
+  termos: [{ required: true, message: 'Por favor aceite o termo de uso.', trigger: 'blur' }],
+  privacidade: [{ required: true, message: 'Por favor aceite a política.', trigger: 'blur' }]
 })
 
 function scrollToElement(option: string) {
@@ -52,18 +75,28 @@ function scrollToElement(option: string) {
   }
 }
 
-function handleRegister() {
-  api
-    .post('usuario', {
-      nome: cadastro.value.nome,
-      doc: cadastro.value.proprietario ? cadastro.value.doc : '',
-      email: cadastro.value.email,
-      proprietario: cadastro.value.proprietario,
-      senha: cadastro.value.senha
-    })
-    .then(() => {
-      alert('novo usuario')
-    })
+async function handleRegister(formEl: FormInstance | undefined) {
+  if (!formEl) return
+  await formEl.validate((valid, fields) => {
+    if (valid) {
+      api
+        .post('usuario', {
+          nome: cadastroForm.nome,
+          doc: cadastroForm.proprietario ? cadastroForm.doc : '',
+          email: cadastroForm.email,
+          proprietario: cadastroForm.proprietario,
+          senha: cadastroForm.senha
+        })
+        .then(() => {
+          alert('Cadastro feito com sucesso!')
+          loginModal.value = true
+          cadastroModal.value = false
+          formEl.resetFields()
+        })
+    } else {
+      console.log('error submit', fields)
+    }
+  })
 }
 
 function handleLogin() {
@@ -82,12 +115,14 @@ function handleLogin() {
       if (response.status == 200) {
         router.push('/maps')
         return response.data
-      } else {
-        alert('Dados incorretos! Tente novamente')
       }
     })
     .then((data) => {
       storeToken(data.access_token, data.expire)
+    })
+    .catch((error) => {
+      alert('Dados incorretos! Tente novamente')
+      console.error(error)
     })
 }
 </script>
@@ -204,53 +239,75 @@ function handleLogin() {
         <img src="../assets/capa.svg" alt="" />
       </div>
       <div class="modal-register">
-        <div>
+        <div class="modal-title">
           <h2>Criar conta</h2>
           <p>Digite as informações necessárias</p>
         </div>
         <div>
-          <el-form :model="cadastro" label-width="120px" label-position="top">
-            <el-form-item>
-              <el-input v-model="cadastro.nome" placeholder="Nome completo" />
+          <el-form
+            :model="cadastroForm"
+            :rules="rules"
+            class="demo-ruleForm"
+            label-width="120px"
+            label-position="top"
+            status-icon
+            ref="cadastroFormRef"
+            size="default"
+          >
+            <el-form-item prop="nome">
+              <el-input v-model="cadastroForm.nome" placeholder="Nome completo" />
             </el-form-item>
-            <el-form-item>
-              <el-input v-model="cadastro.email" placeholder="Email" />
+            <el-form-item prop="email">
+              <el-input v-model="cadastroForm.email" placeholder="Email" />
             </el-form-item>
-            <el-form-item>
+            <el-form-item prop="senha">
               <el-input
-                v-model="cadastro.senha"
+                v-model="cadastroForm.senha"
                 placeholder="Senha"
                 type="password"
                 show-password
               />
             </el-form-item>
-            <el-checkbox v-model="cadastro.proprietario" label="É proprietário?" size="large" />
-            <el-form-item v-if="cadastro.proprietario">
-              <el-input v-model="cadastro.doc" placeholder="CPF" />
-            </el-form-item>
-            <div class="all-terms">
-              <div class="check-terms">
-                <el-checkbox
-                  v-model="cadastro.termos"
-                  label="Li e aceito os Termos de Uso."
-                  size="large"
-                />
-                <el-icon @click="$router.push('/terms')"><Connection /></el-icon>
-              </div>
-              <div class="check-terms">
-                <el-checkbox
-                  v-model="cadastro.privacidade"
-                  label="Li e aceito a Política de Privacidade."
-                  size="large"
-                />
-                <el-icon @click="$router.push('/politics')"><Connection /></el-icon>
+            <div class="checks">
+              <el-checkbox
+                v-model="cadastroForm.proprietario"
+                label="É proprietário?"
+                size="large"
+                prop="proprietario"
+              />
+              <el-form-item v-if="cadastroForm.proprietario" prop="doc">
+                <el-input v-model="cadastroForm.doc" placeholder="CPF" />
+              </el-form-item>
+              <div class="all-terms">
+                <div class="check-terms">
+                  <el-form-item prop="termos">
+                    <el-checkbox
+                      v-model="cadastroForm.termos"
+                      label="Li e aceito os Termos de Uso."
+                      size="large"
+                    />
+                    <el-icon @click="$router.push('/terms')"><Connection /></el-icon>
+                  </el-form-item>
+                </div>
+                <div class="check-terms">
+                  <el-form-item prop="privacidade">
+                    <el-checkbox
+                      v-model="cadastroForm.privacidade"
+                      label="Li e aceito a Política de Privacidade."
+                      size="large"
+                    />
+                    <el-icon @click="$router.push('/politics')"><Connection /></el-icon>
+                  </el-form-item>
+                </div>
               </div>
             </div>
           </el-form>
         </div>
         <div class="login-btn">
           <div>
-            <el-button type="primary" round @click="handleRegister()">Criar conta</el-button>
+            <el-button type="primary" round @click="handleRegister(cadastroFormRef)"
+              >Criar conta</el-button
+            >
           </div>
         </div>
       </div>
@@ -264,6 +321,10 @@ function handleLogin() {
   gap: 24px;
   flex-direction: column;
   padding: 0 50px 50px 50px;
+}
+
+.modal-title p {
+  margin: 8px 0;
 }
 
 .terms a {
@@ -292,7 +353,6 @@ function handleLogin() {
 
 .check-terms {
   display: grid;
-  grid-template-columns: 4fr 1fr;
   align-items: center;
 }
 
@@ -459,6 +519,14 @@ footer img {
 }
 
 .modal-register .el-form-item {
-  margin-bottom: 8px;
+  margin-bottom: 16px;
+}
+
+.all-terms .el-form-item {
+  margin-bottom: 0;
+}
+
+.checks .el-form-item {
+  margin-bottom: 4px;
 }
 </style>
