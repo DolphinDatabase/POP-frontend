@@ -56,10 +56,9 @@ function initMap(): void {
     })
 
     const geoJsonStyle = {
-      fillColor: 'white',      // Fill color
-      strokeColor: 'white',     // Stroke color
-      strokeWeight: 2,        // Stroke weight
-      // You can add more styling options here
+      fillColor: 'white',
+      strokeColor: 'white',
+      strokeWeight: 2,
     };
 
     infoWindow = new google.maps.InfoWindow()
@@ -133,15 +132,12 @@ function initMap(): void {
 
     map.controls[google.maps.ControlPosition.LEFT_TOP].push(input)
 
-    // Bias the SearchBox results towards current map's viewport.
     map.addListener('bounds_changed', () => {
       searchBox.setBounds(map.getBounds() as google.maps.LatLngBounds)
     })
 
     let markers: google.maps.Marker[] = []
 
-    // Listen for the event fired when the user selects a prediction and retrieve
-    // more details for that place.
     searchBox.addListener('places_changed', () => {
       const places = searchBox.getPlaces()
 
@@ -149,13 +145,11 @@ function initMap(): void {
         return
       }
 
-      // Clear out the old markers.
       markers.forEach((marker) => {
         marker.setMap(null)
       })
       markers = []
 
-      // For each place, get the icon, name and location.
       const bounds = new google.maps.LatLngBounds()
 
       places.forEach((place) => {
@@ -172,7 +166,6 @@ function initMap(): void {
           scaledSize: new google.maps.Size(25, 25)
         }
 
-        // Create a marker for each place.
         markers.push(
           new google.maps.Marker({
             map,
@@ -183,7 +176,6 @@ function initMap(): void {
         )
 
         if (place.geometry.viewport) {
-          // Only geocodes have viewport.
           bounds.union(place.geometry.viewport)
         } else {
           bounds.extend(place.geometry.location)
@@ -198,13 +190,7 @@ function initMap(): void {
   <div>
     <div class="location-container">
       <div class="location">
-        <!-- <div class="loc-address">
-          <el-icon><LocationFilled /></el-icon>
-          <h4>{{ placeDetail }}</h4>
-        </div>
-        <div v-if="otherPos">
-          <h6>Latitude: {{ otherPos.lat.toFixed(2) }} Longitude: {{ otherPos.lng.toFixed(2) }}</h6>
-        </div> -->
+        
       </div>
       <div class="usr-options">
         <div v-if="otherPos">
