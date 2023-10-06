@@ -3,6 +3,7 @@ import HomeView from '../views/HomeView.vue'
 import TermsView from '../views/Terms/TermsView.vue'
 import PoliticsView from '../views/Terms/PoliticsView.vue'
 import MapsView from '@/views/Maps/MapsView.vue'
+import AdminView from '@/views/AdminView.vue'
 import { useAuthStore } from '@/store/auth'
 import api from '@/services/api'
 
@@ -28,13 +29,19 @@ const router = createRouter({
       meta: { requiresAuth: false }
     },
     {
+      path: '/admin',
+      name: 'admin',
+      component: AdminView,
+      meta: { requiresAuth: true }
+    },
+    {
       path: '/maps',
       name: 'maps',
       component: MapsView,
       meta: {
         requiresAuth: true
       }
-    }
+    },
   ]
 })
 
