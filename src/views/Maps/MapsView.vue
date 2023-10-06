@@ -21,7 +21,6 @@ onMounted(async () => {
     headers: { Authorization: `Bearer ${token.value}` }
   })
   user.value = res.data
-  console.log(user)
 })
 
 onUnmounted(async () => {
@@ -70,7 +69,6 @@ function initMap(): void {
     latLngListener.value = map.addListener(
       'click',
       ({ latLng: { lat, lng } }) => {
-        console.log("ok")
         get_glebas(lat(),lng())
       }
     )
