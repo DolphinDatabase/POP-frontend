@@ -7,6 +7,7 @@ import api from '@/services/api'
 import router from '@/router'
 import { useAuthStore } from '@/store/auth'
 import type { FormInstance, FormRules } from 'element-plus'
+import { MensagemErro, MensagemSucesso } from '@/components/Notificacao'
 
 interface CadastroForm {
   nome: string
@@ -88,10 +89,18 @@ async function handleRegister(formEl: FormInstance | undefined) {
           senha: cadastroForm.senha
         })
         .then(() => {
-          alert('Cadastro feito com sucesso!')
+          setTimeout(() => {
+            MensagemSucesso('Cadastro feito com sucesso!')
+          }, 1000)
           loginModal.value = true
           cadastroModal.value = false
           formEl.resetFields()
+        })
+        .catch((err) => {
+          console.log(err)
+          setTimeout(() => {
+            MensagemErro('Houve um erro ao concluir o cadastro!')
+          }, 1000)
         })
     } else {
       console.log('error submit', fields)
@@ -121,7 +130,9 @@ function handleLogin() {
       storeToken(data.access_token, data.expire)
     })
     .catch((error) => {
-      alert('Dados incorretos! Tente novamente')
+      setTimeout(() => {
+        MensagemErro('Dados incorretos! Tente novamente!')
+      }, 1000)
       console.error(error)
     })
 }
