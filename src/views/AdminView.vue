@@ -12,7 +12,7 @@ const copyText = ref<string>('')
 let quill: any
 
 function cancelText() {
-  get_termo()
+  getTermo()
   const savedText = copyText.value
   quill.root.innerHTML = savedText
   setTimeout(() => {
@@ -45,7 +45,7 @@ function saveText() {
     })
 }
 
-function get_termo() {
+function getTermo() {
   api
     .get('termo/last?proprietario=false', {
       headers: { Authorization: `Bearer ${token.value}` }
@@ -66,7 +66,7 @@ onMounted(() => {
     editorContent.value = quill.root.innerHTML
   })
 
-  get_termo()
+  getTermo()
 
   const route = useRoute()
   token.value = route.meta.token

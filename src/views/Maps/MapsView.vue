@@ -2,8 +2,10 @@
 import { onMounted, ref, onUnmounted, computed } from 'vue'
 import api from '@/services/api'
 import { useRoute } from 'vue-router'
+import { MensagemErro, MensagemSucesso } from '@/components/Notificacao'
 
-const user = ref({nome:""})
+const user = ref({ id: 0, nome: '', doc: '', email: '', proprietario: false })
+const savedInfo = ref({ id: 0, nome: '', doc: '', email: '', proprietario: false })
 const token = ref()
 const currPos = computed(() => ({
   lat: -14.235004,
@@ -12,15 +14,73 @@ const currPos = computed(() => ({
 const otherPos = ref()
 const latLngListener = ref()
 const avatar = 'https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png'
+const userInfo = ref(false)
+
+function deleteUser(id: number) {
+  // api
+  //   .delete(`usuario/${id}`)
+  //   .then(() => {
+  //     setTimeout(() => {
+  //       MensagemSucesso('As alterações foram salvas com sucesso!')
+  //     }, 1000)
+  //   })
+  //   .catch((err) => {
+  //     console.log(err)
+  //     setTimeout(() => {
+  //       MensagemErro('Não foi possível excluir sua conta!')
+  //     }, 1000)
+  //   })
+}
+
+function updateUser(id: number) {
+  api
+    .put(`usuario/${id}`, {
+      nome: user.value.nome,
+      doc: user.value.doc,
+      email: user.value.email
+    })
+    .then(() => {
+      getUser()
+      setTimeout(() => {
+        MensagemSucesso('As alterações foram salvas com sucesso!')
+      }, 1000)
+    })
+    .catch((err) => {
+      console.log(err)
+      setTimeout(() => {
+        MensagemErro()
+      }, 1000)
+    })
+  userInfo.value = false
+}
+
+function cancelUpdate() {
+  getUser()
+  user.value = savedInfo.value
+  userInfo.value = false
+  setTimeout(() => {
+    MensagemSucesso('As alterações foram canceladas com sucesso!')
+  }, 1000)
+}
+
+function getUser() {
+  api
+    .get('/auth', {
+      headers: { Authorization: `Bearer ${token.value}` }
+    })
+    .then((res) => {
+      user.value = { ...res.data }
+      savedInfo.value = res.data
+    })
+}
 
 onMounted(async () => {
   const route = useRoute()
   token.value = route.meta.token
   initMap()
-  var res = await api.get("/auth", {
-    headers: { Authorization: `Bearer ${token.value}` }
-  })
-  user.value = res.data
+  getUser()
+  console.log(user.value)
+  console.log(savedInfo.value)
 })
 
 onUnmounted(async () => {
@@ -33,7 +93,7 @@ function initMap(): void {
   const searchBox = new google.maps.places.SearchBox(input)
   let infoWindow: google.maps.InfoWindow
 
-  function get_glebas(lat:number,long:number) {
+  function get_glebas(lat: number, long: number) {
     api
       .get(`gleba/location?lat=${lat}&long=${long}`, {
         headers: { Authorization: `Bearer ${token.value}` }
@@ -57,8 +117,8 @@ function initMap(): void {
     const geoJsonStyle = {
       fillColor: 'white',
       strokeColor: 'white',
-      strokeWeight: 2,
-    };
+      strokeWeight: 2
+    }
 
     infoWindow = new google.maps.InfoWindow()
 
@@ -66,66 +126,64 @@ function initMap(): void {
       return geoJsonStyle
     })
 
-    latLngListener.value = map.addListener(
-      'click',
-      ({ latLng: { lat, lng } }) => {
-        get_glebas(lat(),lng())
-      }
-    )
+    latLngListener.value = map.addListener('click', ({ latLng: { lat, lng } }) => {
+      get_glebas(lat(), lng())
+    })
 
     map.data.addListener('click', (event) => {
-      const properties = event.feature.h;
+      const properties = event.feature.h
 
       if (infoWindow) {
-        infoWindow.close();
+        infoWindow.close()
       }
       infoWindow = new google.maps.InfoWindow({
-        content: `<div>loading...</div>`, // Customize the content as needed
-      });
-      infoWindow.setPosition(event.latLng);
-      infoWindow.open(map);
-      api.get(`operacao/${properties.operacao_id}`, {
-        headers: { Authorization: `Bearer ${token.value}` }
+        content: `<div>loading...</div>` // Customize the content as needed
       })
-      .then((data)=>{
-        if(data.status==200){
-          if (infoWindow) {
-            infoWindow.close();
+      infoWindow.setPosition(event.latLng)
+      infoWindow.open(map)
+      api
+        .get(`operacao/${properties.operacao_id}`, {
+          headers: { Authorization: `Bearer ${token.value}` }
+        })
+        .then((data) => {
+          if (data.status == 200) {
+            if (infoWindow) {
+              infoWindow.close()
+            }
+            let op = data.data
+            let content = `<div style='display:grid;grid-template-columns: 1fr 1fr;gap:15px'>`
+            content += `<div>`
+            content += `<p><b>Início plantio:</b> ${op.inicio_plantio}</br>`
+            content += `<b>Fim plantio:</b> ${op.fim_plantio}</br>`
+            content += `<b>Início colheita:</b> ${op.inicio_colheita}</br>`
+            content += `<b>Fim colheita:</b> ${op.fim_colheita}</br>`
+            content += `<b>Estado:</b> ${op.estado.descricao}</br>`
+            content += `<b>Município:</b> ${op.municipio.descricao}</br>`
+            content += `</br><b>Sistema de produção Agrícola:</b></br>`
+            content += `<b>Tipo Solo:</b> ${op.solo.descricao}</br>`
+            content += `<b>Irrigação:</b> ${op.irrigacao.descricao}</br>`
+            content += `<b>Tipo cultivo:</b> ${op.cultivo.descricao}</br>`
+            content += `<b>Grão/Semente:</b> ${op.grao_semente.descricao}</br>`
+            content += `<b>Ciclo do cultivar:</b> ${op.ciclo.descricao}</p>`
+            content += `</div>`
+            content += `<div>`
+            content += `<p><b>Empreendimento:</b></br>`
+            content += `<b>Cesta: </b>${op.empreendimento.cesta}</br>`
+            content += `<b>Zoneamento: </b>${op.empreendimento.zoneamento}</br>`
+            content += `<b>Variedade: </b>${op.empreendimento.variedade}</br>`
+            content += `<b>Produto: </b>${op.empreendimento.produto}</br>`
+            content += `<b>Modalidade: </b>${op.empreendimento.modalidade}</br>`
+            content += `<b>Atividade: </b>${op.empreendimento.atividade}</br>`
+            content += `<b>Finalidade: </b>${op.empreendimento.finalidade}</p>`
+            content += `</div>`
+            content += `</div>`
+            infoWindow = new google.maps.InfoWindow({
+              content: content
+            })
+            infoWindow.setPosition(event.latLng)
+            infoWindow.open(map)
           }
-          let op = data.data
-          let content = `<div style='display:grid;grid-template-columns: 1fr 1fr;gap:15px'>`
-          content += `<div>`
-          content += `<p><b>Início plantio:</b> ${op.inicio_plantio}</br>`
-          content += `<b>Fim plantio:</b> ${op.fim_plantio}</br>`
-          content += `<b>Início colheita:</b> ${op.inicio_colheita}</br>`
-          content += `<b>Fim colheita:</b> ${op.fim_colheita}</br>`
-          content += `<b>Estado:</b> ${op.estado.descricao}</br>`
-          content += `<b>Município:</b> ${op.municipio.descricao}</br>`
-          content += `</br><b>Sistema de produção Agrícola:</b></br>`
-          content += `<b>Tipo Solo:</b> ${op.solo.descricao}</br>`
-          content += `<b>Irrigação:</b> ${op.irrigacao.descricao}</br>`
-          content += `<b>Tipo cultivo:</b> ${op.cultivo.descricao}</br>`
-          content += `<b>Grão/Semente:</b> ${op.grao_semente.descricao}</br>`
-          content += `<b>Ciclo do cultivar:</b> ${op.ciclo.descricao}</p>`
-          content += `</div>`
-          content += `<div>`
-          content += `<p><b>Empreendimento:</b></br>`
-          content += `<b>Cesta: </b>${op.empreendimento.cesta}</br>`
-          content += `<b>Zoneamento: </b>${op.empreendimento.zoneamento}</br>`
-          content += `<b>Variedade: </b>${op.empreendimento.variedade}</br>`
-          content += `<b>Produto: </b>${op.empreendimento.produto}</br>`
-          content += `<b>Modalidade: </b>${op.empreendimento.modalidade}</br>`
-          content += `<b>Atividade: </b>${op.empreendimento.atividade}</br>`
-          content += `<b>Finalidade: </b>${op.empreendimento.finalidade}</p>`
-          content += `</div>`
-          content += `</div>`
-          infoWindow = new google.maps.InfoWindow({
-            content: content,
-          });
-          infoWindow.setPosition(event.latLng);
-          infoWindow.open(map);
-        }
-      })
+        })
     })
 
     map.controls[google.maps.ControlPosition.LEFT_TOP].push(input)
@@ -188,25 +246,36 @@ function initMap(): void {
   <div>
     <div class="location-container">
       <div class="location">
-        
+        <img src="../../assets/logos/black_logo.svg" alt="" />
       </div>
       <div class="usr-options">
         <div v-if="otherPos">
           <h6>Latitude: {{ otherPos.lat.toFixed(2) }} Longitude: {{ otherPos.lng.toFixed(2) }}</h6>
         </div>
-        <el-dropdown>
-          <span class="el-dropdown-link">
-            <el-avatar :size="40" :src="avatar" />
-          </span>
-          <template #dropdown>
-            <el-dropdown-menu>
-              <el-dropdown-item disabled>{{ user.nome }}</el-dropdown-item>
-              <el-dropdown-item disabled>Ajuda</el-dropdown-item>
-              <el-dropdown-item disabled>Configurações</el-dropdown-item>
-              <el-dropdown-item @click="$router.push('/')">Sair</el-dropdown-item>
-            </el-dropdown-menu>
-          </template>
-        </el-dropdown>
+        <div class="usr-options">
+          <h5>{{ savedInfo.nome }}</h5>
+          <el-dropdown>
+            <span class="el-dropdown-link">
+              <el-avatar :size="40" :src="avatar" />
+            </span>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item disabled
+                  ><el-icon><UserFilled /></el-icon>{{ user.nome }}</el-dropdown-item
+                >
+                <el-dropdown-item disabled
+                  ><el-icon><QuestionFilled /></el-icon>Ajuda</el-dropdown-item
+                >
+                <el-dropdown-item @click="userInfo = true"
+                  ><el-icon><Tools /></el-icon>Configurações</el-dropdown-item
+                >
+                <el-dropdown-item @click="$router.push('/')"
+                  ><el-icon><SwitchButton /></el-icon>Sair</el-dropdown-item
+                >
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
+        </div>
       </div>
     </div>
     <div class="location-content">
@@ -215,14 +284,55 @@ function initMap(): void {
     </div>
   </div>
   <footer>
-    © 2023
     <img src="../../assets/logos/light_logo.svg" alt="" />
-    - All rights reserved
+    © 2023 | Mapa de Glebas distribuído por Google
   </footer>
+  <!-- MODAL -->
+  <div class="user-modal" v-if="userInfo">
+    <el-dialog v-model="userInfo">
+      <div class="user-info">
+        <div>
+          <h2>Configurações</h2>
+        </div>
+        <div class="info-content">
+          <h3>Editar perfil</h3>
+          <el-form :model="user" label-width="120px" label-position="top">
+            <p>Nome</p>
+            <el-form-item>
+              <el-input v-model="user.nome" />
+            </el-form-item>
+            <p v-if="user.nome === ''" style="color: #ef5350">Por favor preencha o nome!</p>
+            <p>Email</p>
+            <el-form-item>
+              <el-input v-model="user.email" />
+            </el-form-item>
+            <p v-if="user.email === ''" style="color: #ef5350">Por favor preencha o email!</p>
+            <div v-if="user.proprietario">
+              <p>CPF</p>
+              <el-form-item>
+                <el-input v-model="user.doc" disabled />
+              </el-form-item>
+            </div>
+          </el-form>
+        </div>
+        <div class="del-user" @click="deleteUser(user.id)">
+          <h4>Excluir conta</h4>
+        </div>
+        <div class="upd-btn">
+          <div>
+            <el-button round @click="cancelUpdate">Cancelar</el-button>
+          </div>
+          <div>
+            <el-button type="primary" round @click="updateUser(user.id)">Salvar</el-button>
+          </div>
+        </div>
+      </div>
+    </el-dialog>
+  </div>
 </template>
 <style scoped>
 .location-content input {
-  left: 24px !important;
+  left: 34% !important;
   width: 300px;
   border-radius: 50px;
   height: 20px;
@@ -231,16 +341,6 @@ function initMap(): void {
 }
 .image {
   width: 120px;
-}
-.map-view-container {
-  display: grid;
-  grid-template-columns: 1fr 5fr;
-}
-
-.loc-address {
-  display: flex;
-  align-items: center;
-  gap: 16px;
 }
 
 footer {
@@ -272,7 +372,7 @@ footer img {
   display: grid;
   grid-template-columns: 1fr 1fr;
   justify-items: end;
-  padding: 16px 24px;
+  padding: 8px 24px;
   align-items: center;
 }
 
@@ -283,7 +383,31 @@ footer img {
 .location h4 {
   margin: 0;
 }
+
+.usr-options {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.info-content {
+  padding: 0 16px;
+}
+
+.upd-btn {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+}
+
+.del-user h4 {
+  color: #ef5350;
+  cursor: pointer;
+  text-align: center;
+  padding: 16px;
+}
 </style>
+
 <style>
 .location .el-icon {
   color: #ef5350;
@@ -294,23 +418,14 @@ footer img {
 }
 
 #search {
-  position: fixed !important;
-  width: 420px;
+  width: 400px;
 }
 
-/* .gm-style-iw.gm-style-iw-c {
-  background-color: #ef5350;
-}
-.gm-style-iw.gm-style-iw-c .gm-style-iw-d{
-  background-color: #ef5350;
-  overflow: hidden !important;
+.user-modal .el-dialog__body {
+  padding-top: 6px !important;
 }
 
-.gm-style .gm-style-iw-tc::after {
-  background-color: #ef5350;
+.user-modal .el-dialog {
+  width: 450px;
 }
-
-.gm-style-iw-d {
-  overflow: hidden;
-} */
 </style>

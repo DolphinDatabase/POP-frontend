@@ -191,9 +191,8 @@ function handleLogin() {
     </div>
   </div>
   <footer>
-    © 2023
     <img src="../assets/logos/light_logo.svg" alt="" />
-    - All rights reserved
+    © 2023 - Todos os direitos reservados
   </footer>
   <!-- MODAL -->
   <div class="modal" v-if="loginModal">
@@ -472,7 +471,7 @@ footer img {
   padding-bottom: 0 !important;
 }
 
-.el-dialog__body {
+.modal .el-dialog__body {
   padding: 0 !important;
   height: 500px;
   display: grid;
