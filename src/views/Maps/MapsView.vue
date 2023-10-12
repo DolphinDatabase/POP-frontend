@@ -3,7 +3,6 @@ import { onMounted, ref, onUnmounted, computed } from 'vue'
 import api from '@/services/api'
 import { useRoute } from 'vue-router'
 import { MensagemErro, MensagemSucesso } from '@/components/Notificacao'
-import { fa } from 'element-plus/es/locale/index.mjs'
 import router from '@/router'
 
 const user = ref({ id: 0, nome: '', doc: '', email: '', proprietario: false })
@@ -82,13 +81,11 @@ function openTermsInNewTab() {
   window.open('/terms', '_blank')
 }
 
-onMounted(async () => {
+onMounted(() => {
   const route = useRoute()
   token.value = route.meta.token
   initMap()
   getUser()
-  console.log(user.value)
-  console.log(savedInfo.value)
 })
 
 onUnmounted(async () => {

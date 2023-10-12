@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import PrincipalHome from '@/components/Home/PrincipalHome.vue'
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import SolutionsCarousel from '@/components/Home/SolutionsCarousel.vue'
 import TeamDetails from '@/components/Home/TeamDetails.vue'
 import api from '@/services/api'
@@ -8,6 +8,7 @@ import router from '@/router'
 import { useAuthStore } from '@/store/auth'
 import type { FormInstance, FormRules } from 'element-plus'
 import { MensagemErro, MensagemSucesso } from '@/components/Notificacao'
+import { useRoute } from 'vue-router'
 
 interface CadastroForm {
   nome: string
@@ -26,6 +27,7 @@ const options = ref(['Início', 'Solução', 'Sobre'])
 const chooseOpt = ref('Início')
 const loginModal = ref(false)
 const cadastroModal = ref(false)
+const token = ref()
 const storeToken = (token: string, expiration: number) => {
   authStore.setToken(token, expiration)
 }
@@ -122,7 +124,7 @@ function handleLogin() {
     })
     .then((response) => {
       if (response.status == 200) {
-        router.push('/maps')
+        getUser(response.data.access_token)
         return response.data
       }
     })
@@ -134,6 +136,21 @@ function handleLogin() {
         MensagemErro('Dados incorretos! Tente novamente!')
       }, 1000)
       console.error(error)
+    })
+}
+
+function getUser(token: string) {
+  api
+    .get('/auth', {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    .then((res) => {
+      if(res.data.adm == false) {
+        router.push('/maps')
+      } else {
+        router.push('/admin')
+      }
+      
     })
 }
 </script>
