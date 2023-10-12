@@ -3,6 +3,7 @@ import { onMounted, ref, onUnmounted, computed } from 'vue'
 import api from '@/services/api'
 import { useRoute } from 'vue-router'
 import { MensagemErro, MensagemSucesso } from '@/components/Notificacao'
+import { fa } from 'element-plus/es/locale/index.mjs'
 
 const user = ref({ id: 0, nome: '', doc: '', email: '', proprietario: false })
 const savedInfo = ref({ id: 0, nome: '', doc: '', email: '', proprietario: false })
@@ -15,6 +16,7 @@ const otherPos = ref()
 const latLngListener = ref()
 const avatar = 'https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png'
 const userInfo = ref(false)
+const continueLoad = ref(false)
 
 function deleteUser(id: number) {
   // api
@@ -74,6 +76,10 @@ function getUser() {
     })
 }
 
+function openTermsInNewTab() {
+  window.open('/terms', '_blank')
+}
+
 onMounted(async () => {
   const route = useRoute()
   token.value = route.meta.token
@@ -92,17 +98,30 @@ function initMap(): void {
   const input = document.getElementById('search') as HTMLInputElement
   const searchBox = new google.maps.places.SearchBox(input)
   let infoWindow: google.maps.InfoWindow
+  let initialCircleRadius = 100000
 
-  function get_glebas(lat: number, long: number) {
-    api
-      .get(`gleba/location?lat=${lat}&long=${long}`, {
-        headers: { Authorization: `Bearer ${token.value}` }
-      })
-      .then((res) => {
-        if (res.data.features.length > 0) {
-          map.data.addGeoJson(res.data)
+  async function get_glebas(lat: number, long: number, radius: number, page: number = 1) {
+    const step = 100
+    const limit = page * step
+    const init = limit - step
+
+    try {
+      const res = await api.get(
+        `gleba/location?lat=${lat}&long=${long}&size=${radius}&skip=${init}&limit=${limit}`,
+        {
+          headers: { Authorization: `Bearer ${token.value}` }
         }
-      })
+      )
+
+      if (res.data.features.length > 0) {
+        if (continueLoad.value) {
+          map.data.addGeoJson(res.data)
+          await get_glebas(lat, long, radius, page + 1)
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error)
+    }
   }
 
   if (mapElement) {
@@ -120,14 +139,60 @@ function initMap(): void {
       strokeWeight: 2
     }
 
+    const circleOptions = {
+      strokeColor: '#000000',
+      strokeOpacity: 0.8,
+      strokeWeight: 2,
+      fillOpacity: 0,
+      map: map,
+      center: currPos.value,
+      radius: initialCircleRadius,
+      draggable: true,
+      zIndex: 0
+    }
+
+    const circle = new google.maps.Circle(circleOptions)
+
+    document.getElementById('zoom-in-control')!.addEventListener('click', () => {
+      initialCircleRadius *= 2
+      circle.setRadius(initialCircleRadius)
+    })
+
+    document.getElementById('zoom-out-control')!.addEventListener('click', () => {
+      initialCircleRadius /= 2
+      circle.setRadius(initialCircleRadius)
+    })
+
+    google.maps.event.addListener(circle, 'drag', () => {
+      continueLoad.value = false
+      map.data.forEach((feature) => {
+        map.data.remove(feature)
+      })
+    })
+
+    google.maps.event.addListener(circle, 'dragend', () => {
+      const newCenter = circle.getCenter()
+      const newRadius = circle.getRadius()
+      continueLoad.value = true
+      get_glebas(newCenter.lat(), newCenter.lng(), newRadius)
+    })
+
+    var currMarker = new google.maps.Marker({
+      position: map.getCenter(),
+      draggable: true,
+      icon: {
+        url: 'https://maps.gstatic.com/intl/en_us/mapfiles/markers2/measle_blue.png',
+        size: new google.maps.Size(7, 7),
+        anchor: new google.maps.Point(4, 4)
+      },
+      map: map
+    })
+    circle.bindTo('center', currMarker, 'position')
+
     infoWindow = new google.maps.InfoWindow()
 
     map.data.setStyle(() => {
       return geoJsonStyle
-    })
-
-    latLngListener.value = map.addListener('click', ({ latLng: { lat, lng } }) => {
-      get_glebas(lat(), lng())
     })
 
     map.data.addListener('click', (event) => {
@@ -137,7 +202,7 @@ function initMap(): void {
         infoWindow.close()
       }
       infoWindow = new google.maps.InfoWindow({
-        content: `<div>loading...</div>` // Customize the content as needed
+        content: `<div>loading...</div>`
       })
       infoWindow.setPosition(event.latLng)
       infoWindow.open(map)
@@ -242,6 +307,7 @@ function initMap(): void {
   }
 }
 </script>
+
 <template>
   <div>
     <div class="location-container">
@@ -269,6 +335,9 @@ function initMap(): void {
                 <el-dropdown-item @click="userInfo = true"
                   ><el-icon><Tools /></el-icon>Configurações</el-dropdown-item
                 >
+                <el-dropdown-item @click="openTermsInNewTab" target="_blank"
+                  ><el-icon><Management /></el-icon>Termos e condições<el-icon><TopRight /></el-icon
+                ></el-dropdown-item>
                 <el-dropdown-item @click="$router.push('/')"
                   ><el-icon><SwitchButton /></el-icon>Sair</el-dropdown-item
                 >
@@ -281,6 +350,10 @@ function initMap(): void {
     <div class="location-content">
       <input id="search" class="controls" type="text" placeholder="Pesquisar" />
       <div id="map" style="height: 86vh"></div>
+      <div id="zoom-controls">
+        <div id="zoom-in-control" class="custom-control">+</div>
+        <div id="zoom-out-control" class="custom-control">-</div>
+      </div>
     </div>
   </div>
   <footer>
@@ -330,6 +403,7 @@ function initMap(): void {
     </el-dialog>
   </div>
 </template>
+
 <style scoped>
 .location-content input {
   left: 34% !important;
@@ -405,6 +479,29 @@ footer img {
   cursor: pointer;
   text-align: center;
   padding: 16px;
+}
+
+.custom-control {
+  background-color: #fff;
+  border: 1px solid #ccc;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  text-align: center;
+  line-height: 30px;
+  font-size: 20px;
+  cursor: pointer;
+  position: absolute;
+  bottom: 16px;
+  transform: translateY(-50%);
+}
+
+#zoom-in-control {
+  right: 45%;
+}
+
+#zoom-out-control {
+  left: 45%;
 }
 </style>
 
