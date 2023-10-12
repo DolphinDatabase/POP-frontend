@@ -4,6 +4,7 @@ import api from '@/services/api'
 import { useRoute } from 'vue-router'
 import { MensagemErro, MensagemSucesso } from '@/components/Notificacao'
 import { fa } from 'element-plus/es/locale/index.mjs'
+import router from '@/router'
 
 const user = ref({ id: 0, nome: '', doc: '', email: '', proprietario: false })
 const savedInfo = ref({ id: 0, nome: '', doc: '', email: '', proprietario: false })
@@ -19,19 +20,20 @@ const userInfo = ref(false)
 const continueLoad = ref(false)
 
 function deleteUser(id: number) {
-  // api
-  //   .delete(`usuario/${id}`)
-  //   .then(() => {
-  //     setTimeout(() => {
-  //       MensagemSucesso('As alterações foram salvas com sucesso!')
-  //     }, 1000)
-  //   })
-  //   .catch((err) => {
-  //     console.log(err)
-  //     setTimeout(() => {
-  //       MensagemErro('Não foi possível excluir sua conta!')
-  //     }, 1000)
-  //   })
+  api
+    .delete(`usuario/${id}`)
+    .then(() => {
+      setTimeout(() => {
+        MensagemSucesso('A conta foi deletada com sucesso!')
+      }, 1000)
+      router.push('/')
+    })
+    .catch((err) => {
+      console.log(err)
+      setTimeout(() => {
+        MensagemErro('Não foi possível excluir sua conta!')
+      }, 1000)
+    })
 }
 
 function updateUser(id: number) {
