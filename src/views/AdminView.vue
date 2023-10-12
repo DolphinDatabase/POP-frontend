@@ -2,7 +2,7 @@
 import { MensagemSucesso, MensagemErro } from '@/components/Notificacao'
 import api from '@/services/api'
 import Quill from 'quill'
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 
 const editorContent = ref<string>('')
