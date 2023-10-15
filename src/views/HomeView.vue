@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import PrincipalHome from '@/components/Home/PrincipalHome.vue'
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive } from 'vue'
 import SolutionsCarousel from '@/components/Home/SolutionsCarousel.vue'
 import TeamDetails from '@/components/Home/TeamDetails.vue'
 import api from '@/services/api'
@@ -8,7 +8,6 @@ import router from '@/router'
 import { useAuthStore } from '@/store/auth'
 import type { FormInstance, FormRules } from 'element-plus'
 import { MensagemErro, MensagemSucesso } from '@/components/Notificacao'
-import { useRoute } from 'vue-router'
 
 interface CadastroForm {
   nome: string
@@ -27,7 +26,6 @@ const options = ref(['Início', 'Solução', 'Sobre'])
 const chooseOpt = ref('Início')
 const loginModal = ref(false)
 const cadastroModal = ref(false)
-const token = ref()
 const storeToken = (token: string, expiration: number) => {
   authStore.setToken(token, expiration)
 }
@@ -88,7 +86,8 @@ async function handleRegister(formEl: FormInstance | undefined) {
           doc: cadastroForm.proprietario ? cadastroForm.doc : '',
           email: cadastroForm.email,
           proprietario: cadastroForm.proprietario,
-          senha: cadastroForm.senha
+          senha: cadastroForm.senha,
+          adm: false
         })
         .then(() => {
           setTimeout(() => {

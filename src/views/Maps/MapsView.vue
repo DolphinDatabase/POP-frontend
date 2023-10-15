@@ -4,6 +4,7 @@ import api from '@/services/api'
 import { useRoute } from 'vue-router'
 import { MensagemErro, MensagemSucesso } from '@/components/Notificacao'
 import router from '@/router'
+import OnBoard from '@/components/OnBoard/OnBoard.vue'
 
 const user = ref({ id: 0, nome: '', doc: '', email: '', proprietario: false })
 const savedInfo = ref({ id: 0, nome: '', doc: '', email: '', proprietario: false })
@@ -17,6 +18,27 @@ const latLngListener = ref()
 const avatar = 'https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png'
 const userInfo = ref(false)
 const continueLoad = ref(false)
+const onBoardState = ref(true)
+
+function setPrimeiroAcesso() {
+  try {
+    window.localStorage.setItem('first_access', 'true')
+  } catch {
+    return false
+  }
+}
+
+function getPrimeiroAcesso() {
+  try {
+    return localStorage.getItem('first_access')
+  } catch {
+    return false
+  }
+}
+
+function fecharOnBoard() {
+  onBoardState.value = false
+}
 
 function deleteUser(id: number) {
   api
@@ -82,6 +104,12 @@ function openTermsInNewTab() {
 }
 
 onMounted(() => {
+  if (getPrimeiroAcesso() == null) {
+    onBoardState.value = true
+    setPrimeiroAcesso()
+  } else {
+    onBoardState.value = false
+  }
   const route = useRoute()
   token.value = route.meta.token
   initMap()
@@ -308,98 +336,107 @@ function initMap(): void {
 </script>
 
 <template>
-  <div>
-    <div class="location-container">
-      <div class="location">
-        <img src="../../assets/logos/black_logo.svg" alt="" />
-      </div>
-      <div class="usr-options">
-        <div v-if="otherPos">
-          <h6>Latitude: {{ otherPos.lat.toFixed(2) }} Longitude: {{ otherPos.lng.toFixed(2) }}</h6>
+  <div :style="onBoardState ? 'display:block' : 'display:none'">
+    <OnBoard :fechar-on-board="fecharOnBoard" />
+  </div>
+
+  <div :style="onBoardState ? 'display:none' : 'display:block'">
+    <div>
+      <div class="location-container">
+        <div class="location">
+          <img src="../../assets/logos/black_logo.svg" alt="" />
         </div>
         <div class="usr-options">
-          <h5>{{ savedInfo.nome }}</h5>
-          <el-dropdown>
-            <span class="el-dropdown-link">
-              <el-avatar :size="40" :src="avatar" />
-            </span>
-            <template #dropdown>
-              <el-dropdown-menu>
-                <el-dropdown-item disabled
-                  ><el-icon><UserFilled /></el-icon>{{ user.nome }}</el-dropdown-item
-                >
-                <el-dropdown-item disabled
-                  ><el-icon><QuestionFilled /></el-icon>Ajuda</el-dropdown-item
-                >
-                <el-dropdown-item @click="userInfo = true"
-                  ><el-icon><Tools /></el-icon>Configurações</el-dropdown-item
-                >
-                <el-dropdown-item @click="openTermsInNewTab" target="_blank"
-                  ><el-icon><Management /></el-icon>Termos e condições<el-icon><TopRight /></el-icon
-                ></el-dropdown-item>
-                <el-dropdown-item @click="$router.push('/')"
-                  ><el-icon><SwitchButton /></el-icon>Sair</el-dropdown-item
-                >
-              </el-dropdown-menu>
-            </template>
-          </el-dropdown>
+          <div v-if="otherPos">
+            <h6>
+              Latitude: {{ otherPos.lat.toFixed(2) }} Longitude: {{ otherPos.lng.toFixed(2) }}
+            </h6>
+          </div>
+          <div class="usr-options">
+            <h5>{{ savedInfo.nome }}</h5>
+            <el-dropdown>
+              <span class="el-dropdown-link">
+                <el-avatar :size="40" :src="avatar" />
+              </span>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item disabled
+                    ><el-icon><UserFilled /></el-icon>{{ user.nome }}</el-dropdown-item
+                  >
+                  <el-dropdown-item @click="onBoardState = true"
+                    ><el-icon><QuestionFilled /></el-icon>Ajuda</el-dropdown-item
+                  >
+                  <el-dropdown-item @click="userInfo = true"
+                    ><el-icon><Tools /></el-icon>Configurações</el-dropdown-item
+                  >
+                  <el-dropdown-item @click="openTermsInNewTab" target="_blank"
+                    ><el-icon><Management /></el-icon>Termos e condições<el-icon
+                      ><TopRight /></el-icon
+                  ></el-dropdown-item>
+                  <el-dropdown-item @click="$router.push('/')"
+                    ><el-icon><SwitchButton /></el-icon>Sair</el-dropdown-item
+                  >
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
+          </div>
+        </div>
+      </div>
+      <div class="location-content">
+        <input id="search" class="controls" type="text" placeholder="Pesquisar" />
+        <div id="map" style="height: 86vh"></div>
+        <div id="zoom-controls">
+          <div id="zoom-in-control" class="custom-control">+</div>
+          <div id="zoom-out-control" class="custom-control">-</div>
         </div>
       </div>
     </div>
-    <div class="location-content">
-      <input id="search" class="controls" type="text" placeholder="Pesquisar" />
-      <div id="map" style="height: 86vh"></div>
-      <div id="zoom-controls">
-        <div id="zoom-in-control" class="custom-control">+</div>
-        <div id="zoom-out-control" class="custom-control">-</div>
-      </div>
-    </div>
-  </div>
-  <footer>
-    <img src="../../assets/logos/light_logo.svg" alt="" />
-    © 2023 | Mapa de Glebas distribuído por Google
-  </footer>
-  <!-- MODAL -->
-  <div class="user-modal" v-if="userInfo">
-    <el-dialog v-model="userInfo">
-      <div class="user-info">
-        <div>
-          <h2>Configurações</h2>
-        </div>
-        <div class="info-content">
-          <h3>Editar perfil</h3>
-          <el-form :model="user" label-width="120px" label-position="top">
-            <p>Nome</p>
-            <el-form-item>
-              <el-input v-model="user.nome" />
-            </el-form-item>
-            <p v-if="user.nome === ''" style="color: #ef5350">Por favor preencha o nome!</p>
-            <p>Email</p>
-            <el-form-item>
-              <el-input v-model="user.email" />
-            </el-form-item>
-            <p v-if="user.email === ''" style="color: #ef5350">Por favor preencha o email!</p>
-            <div v-if="user.proprietario">
-              <p>CPF</p>
+    <footer>
+      <img src="../../assets/logos/light_logo.svg" alt="" />
+      © 2023 | Mapa de Glebas distribuído por Google
+    </footer>
+    <!-- MODAL -->
+    <div class="user-modal" v-if="userInfo">
+      <el-dialog v-model="userInfo">
+        <div class="user-info">
+          <div>
+            <h2>Configurações</h2>
+          </div>
+          <div class="info-content">
+            <h3>Editar perfil</h3>
+            <el-form :model="user" label-width="120px" label-position="top">
+              <p>Nome</p>
               <el-form-item>
-                <el-input v-model="user.doc" disabled />
+                <el-input v-model="user.nome" />
               </el-form-item>
+              <p v-if="user.nome === ''" style="color: #ef5350">Por favor preencha o nome!</p>
+              <p>Email</p>
+              <el-form-item>
+                <el-input v-model="user.email" />
+              </el-form-item>
+              <p v-if="user.email === ''" style="color: #ef5350">Por favor preencha o email!</p>
+              <div v-if="user.proprietario">
+                <p>CPF</p>
+                <el-form-item>
+                  <el-input v-model="user.doc" disabled />
+                </el-form-item>
+              </div>
+            </el-form>
+          </div>
+          <div class="del-user" @click="deleteUser(user.id)">
+            <h4>Excluir conta</h4>
+          </div>
+          <div class="upd-btn">
+            <div>
+              <el-button round @click="cancelUpdate">Cancelar</el-button>
             </div>
-          </el-form>
-        </div>
-        <div class="del-user" @click="deleteUser(user.id)">
-          <h4>Excluir conta</h4>
-        </div>
-        <div class="upd-btn">
-          <div>
-            <el-button round @click="cancelUpdate">Cancelar</el-button>
-          </div>
-          <div>
-            <el-button type="primary" round @click="updateUser(user.id)">Salvar</el-button>
+            <div>
+              <el-button type="primary" round @click="updateUser(user.id)">Salvar</el-button>
+            </div>
           </div>
         </div>
-      </div>
-    </el-dialog>
+      </el-dialog>
+    </div>
   </div>
 </template>
 
