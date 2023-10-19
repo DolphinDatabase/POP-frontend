@@ -25,7 +25,7 @@ function saveText() {
       'termo',
       {
         text: editorContent.value,
-        proprietario: false
+        proprietario: true
       },
       {
         headers: { Authorization: `Bearer ${token.value}` }

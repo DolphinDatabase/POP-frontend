@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 import TermsView from '../views/Terms/TermsView.vue'
+import TermsOwnerView from '../views/Terms/TermsOwnerView.vue'
 import PoliticsView from '../views/Terms/PoliticsView.vue'
 import MapsView from '@/views/Maps/MapsView.vue'
 import AdminView from '@/views/AdminView.vue'
@@ -20,6 +21,12 @@ const router = createRouter({
       path: '/terms',
       name: 'terms',
       component: TermsView,
+      meta: { requiresAuth: false }
+    },
+    {
+      path: '/terms-owner',
+      name: 'terms-owner',
+      component: TermsOwnerView,
       meta: { requiresAuth: false }
     },
     {

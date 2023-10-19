@@ -201,6 +201,7 @@ function getUser(token: string) {
     <div class="terms">
       <a href="/politics">Política de privacidade</a>
       <a href="/terms">Termos de Uso</a>
+      <a href="/terms-owner">Termos de Uso para Proprietários</a>
       <a href="https://github.com/DolphinDatabase/POP/wiki/Development-Team" target="_blank"
         >Suporte e contato</a
       >
@@ -312,7 +313,8 @@ function getUser(token: string) {
                       label="Li e aceito os Termos de Uso."
                       size="large"
                     />
-                    <el-icon @click="$router.push('/terms')"><Connection /></el-icon>
+                    <el-icon v-if="!cadastroForm.proprietario" @click="$router.push('/terms')"><Connection /></el-icon>
+                    <el-icon v-if="cadastroForm.proprietario" @click="$router.push('/terms-owner')"><Connection /></el-icon>
                   </el-form-item>
                 </div>
                 <div class="check-terms">
@@ -343,9 +345,9 @@ function getUser(token: string) {
 
 <style scoped>
 .terms {
-  display: flex;
+  display: grid;
   gap: 24px;
-  flex-direction: column;
+  grid-template-columns: 1fr 1fr;
   padding: 0 50px 50px 50px;
 }
 
