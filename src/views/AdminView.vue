@@ -1,18 +1,50 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import UserTerm from '@/components/Terms/UserTerm.vue'
 import OwnerTerm from '@/components/Terms/OwnerTerm.vue'
+import OnBoardAdmin from '@/components/OnBoardAdmin/OnBoardAdmin.vue'
 
 const avatar = 'https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png'
+const onBoardState = ref(true)
+
+function setPrimeiroAcesso() {
+  try {
+    window.localStorage.setItem('first_adm_access', 'true')
+  } catch {
+    return false
+  }
+}
+
+function getPrimeiroAcesso() {
+  try {
+    return localStorage.getItem('first_adm_access')
+  } catch {
+    return false
+  }
+}
+
+function fecharOnBoard() {
+  onBoardState.value = false
+}
 
 onMounted(() => {
   UserTerm
   OwnerTerm
+  if (getPrimeiroAcesso() == null) {
+    onBoardState.value = true
+    setPrimeiroAcesso()
+  } else {
+    onBoardState.value = false
+  }
 })
 </script>
 
 <template>
-  <div class="adm-view">
+  <div :style="onBoardState ? 'display:block' : 'display:none'">
+    <OnBoardAdmin :fechar-on-board="fecharOnBoard" />
+  </div>
+
+  <div class="adm-view" :style="onBoardState ? 'display:none' : 'display:block'">
     <div class="navigation-adm">
       <div class="icon">
         <img src="../assets/logos/black_logo.svg" alt="" />
@@ -25,8 +57,15 @@ onMounted(() => {
           </span>
           <template #dropdown>
             <el-dropdown-menu>
-              <el-dropdown-item disabled>Administrador</el-dropdown-item>
-              <el-dropdown-item @click="$router.push('/')">Sair</el-dropdown-item>
+              <el-dropdown-item disabled
+                ><el-icon><UserFilled /></el-icon>Administrador</el-dropdown-item
+              >
+              <el-dropdown-item @click="onBoardState = true"
+                ><el-icon><QuestionFilled /></el-icon>Ajuda</el-dropdown-item
+              >
+              <el-dropdown-item @click="$router.push('/')"
+                ><el-icon><SwitchButton /></el-icon>Sair</el-dropdown-item
+              >
             </el-dropdown-menu>
           </template>
         </el-dropdown>

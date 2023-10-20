@@ -46,7 +46,7 @@ function saveText() {
 
 function getTermo() {
   api
-    .get('termo/last?proprietario=false', {
+    .get('termo/last?proprietario=true', {
       headers: { Authorization: `Bearer ${token.value}` }
     })
     .then((res) => {
