@@ -3,7 +3,6 @@ import beatriz from '@/assets/team/beatriz.jpg'
 import pedro from '@/assets/team/pedro.jpg'
 import hamilton from '@/assets/team/hamilton.jpeg'
 import victor from '@/assets/team/victor.jpg'
-import marcos from '@/assets/team/marcos.jpeg'
 </script>
 
 <template>
@@ -37,14 +36,6 @@ import marcos from '@/assets/team/marcos.jpeg'
         <h4>Hamilton Zanini</h4>
         <p>Developer</p>
       </div>
-      <div>
-        <el-avatar
-          :size="70"
-          :src="marcos"
-        />
-        <h4>Marcos Calixto</h4>
-        <p>Developer</p>
-      </div>
     </div>
   </div>
 </template>
@@ -70,7 +61,7 @@ h6 {
 
 .avatars {
   display: grid;
-  grid-template-columns: repeat(5, 3fr);
+  grid-template-columns: repeat(4, 3fr);
   justify-items: center;
 }
 
