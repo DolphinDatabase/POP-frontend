@@ -11,17 +11,16 @@ const copyText = ref<string>('')
 let quill: any
 const next = ref(true)
 
-const doc = {
-  terms: ref([{ text: '' }])
-}
+const terms = ref([{ param: '' }])
+
 
 const addTerm = () => {
-  doc.terms.value.push({ text: '' })
+  terms.value.push({ param: '' })
 }
 
 const removeTerm = (index: number) => {
   if (index !== -1) {
-    doc.terms.value.splice(index, 1)
+    terms.value.splice(index, 1)
   }
 }
 
@@ -95,7 +94,7 @@ onMounted(() => {
     </div>
     <div :style="next ? 'display:none' : ''">
       <p>Adicione parâmetros para os termos do usuário provedor de dados</p>
-      <div v-for="(term, index) in doc.terms.value" :key="index">
+      <div v-for="(term, index) in terms" :key="index">
         <div class="row">
           <div class="col s2">
             <div class="param-label">
@@ -103,7 +102,7 @@ onMounted(() => {
               <el-icon v-if="index != 0" @click="removeTerm(index)"><Close /></el-icon>
             </div>
             <el-input
-              v-model="term.text"
+              v-model="term.param"
               placeholder="Escreva um parâmetro de aceite"
               style="margin-bottom: 16px"
             />
