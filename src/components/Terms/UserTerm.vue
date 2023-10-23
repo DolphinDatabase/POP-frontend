@@ -87,6 +87,7 @@ onMounted(() => {
 .editor-container {
   padding: 8px 40px;
   padding-bottom: 0;
+  width: 85vw;
 }
 
 #editor {
@@ -94,7 +95,7 @@ onMounted(() => {
 }
 
 .adm-btn {
-  position: relative;
+  position: absolute;
   bottom: 0;
   background: white;
   width: 100%;
