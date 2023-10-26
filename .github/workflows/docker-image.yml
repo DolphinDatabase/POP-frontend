@@ -21,8 +21,7 @@ jobs:
     - name: Get the latest Docker image tag
       id: get_last_tag
       run: |
-        TOKEN="${{ secrets.DOCKER_HUB_TOKEN }}"
-        LAST_TAG=$(curl -s -H "Authorization: Bearer $TOKEN" -X GET "https://hub.docker.com/repository/docker/dolphindatabase/visiona-front/tags/?page_size=1" | jq -r '.results[0].name')
+        LAST_TAG=$(curl -s -H "Authorization: Bearer ${{ secrets.DOCKER_HUB_TOKEN }}" -X GET "https://hub.docker.com/repository/docker/dolphindatabase/visiona-front/tags/?page_size=1" | jq -r '.results[0].name')
         echo "::set-output name=tag::$LAST_TAG"
 
     - name: Increment the Docker image tag
