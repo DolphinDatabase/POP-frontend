@@ -1,0 +1,62 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches:
+      - dev
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Determine branch
+      id: branch
+      run: echo "::set-output name=branch::${{ github.ref }}"
+      
+    - name: Get the latest Docker image tag
+      id: get_last_tag
+      run: |
+        TOKEN=$(curl -s -H "Content-Type: application/json" -X POST -d '{"username": "'${{ secrets.DOCKER_USERNAME }}'", "password": "'${{ secrets.DOCKER_PASSWORD }}'"}' "https://hub.docker.com/v2/users/login/" | jq -r .token)
+        LAST_TAG=$(curl -s -H "Authorization: JWT $TOKEN" -X GET "https://hub.docker.com/repository/docker/dolphindatabase/visiona-front/tags/?page_size=1" | jq -r '.results[0].name')
+        echo "::set-output name=tag::$LAST_TAG"
+
+    - name: Increment the Docker image tag
+      id: increment_tag
+      run: |
+        LAST_TAG=${{ steps.get_last_tag.outputs.tag }}
+        IFS='.' read -ra VERSION <<< "$LAST_TAG"
+        MAJOR=${VERSION[0]}
+        MINOR=${VERSION[1]}
+        PATCH=${VERSION[2]}
+        PATCH=$((PATCH + 1))
+        NEW_TAG="$MAJOR.$MINOR.$PATCH"
+        echo "::set-output name=tag::$NEW_TAG"
+
+    - name: Set image tag suffix
+      id: set_suffix
+      run: |
+        BRANCH=${{ steps.branch.outputs.branch }}
+        if [ "$BRANCH" == "refs/heads/main" ]; then
+          SUFFIX="release"
+        else
+          SUFFIX="dev"
+        fi
+        echo "::set-output name=suffix::$SUFFIX"
+
+    - name: Build and push Docker image
+      env:
+        DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+        DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        DOCKER_IMAGE: dolphindatabase/visiona-front
+      run: |
+        IMAGE_TAG=${{ steps.increment_tag.outputs.tag }}
+        SUFFIX=${{ steps.set_suffix.outputs.suffix }}
+        FINAL_TAG="$IMAGE_TAG-$SUFFIX"
+        docker build -t $DOCKER_IMAGE:$FINAL_TAG .
+        echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
+        docker push $DOCKER_IMAGE:$FINAL_TAG
