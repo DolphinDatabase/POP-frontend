@@ -20,7 +20,7 @@ interface CadastroForm {
 }
 
 const cadastroFormRef = ref<FormInstance>()
-
+const continuar = ref(true)
 const authStore = useAuthStore()
 const options = ref(['Início', 'Solução', 'Sobre'])
 const chooseOpt = ref('Início')
@@ -144,12 +144,11 @@ function getUser(token: string) {
       headers: { Authorization: `Bearer ${token}` }
     })
     .then((res) => {
-      if(res.data.adm == false) {
+      if (res.data.adm == false) {
         router.push('/maps')
       } else {
         router.push('/admin')
       }
-      
     })
 }
 </script>
@@ -267,6 +266,9 @@ function getUser(token: string) {
       </div>
       <div class="modal-register">
         <div class="modal-title">
+          <div v-if="!continuar" @click="continuar = true">
+            <el-icon class="back"><Back /></el-icon>
+          </div>
           <h2>Criar conta</h2>
           <p>Digite as informações necessárias</p>
         </div>
@@ -281,60 +283,73 @@ function getUser(token: string) {
             ref="cadastroFormRef"
             size="default"
           >
-            <el-form-item prop="nome">
-              <el-input v-model="cadastroForm.nome" placeholder="Nome completo" />
-            </el-form-item>
-            <el-form-item prop="email">
-              <el-input v-model="cadastroForm.email" placeholder="Email" />
-            </el-form-item>
-            <el-form-item prop="senha">
-              <el-input
-                v-model="cadastroForm.senha"
-                placeholder="Senha"
-                type="password"
-                show-password
-              />
-            </el-form-item>
-            <div class="checks">
-              <el-checkbox
-                v-model="cadastroForm.proprietario"
-                label="É proprietário?"
-                size="large"
-                prop="proprietario"
-              />
-              <el-form-item v-if="cadastroForm.proprietario" prop="doc">
-                <el-input v-model="cadastroForm.doc" placeholder="CPF" />
+            <div :style="continuar ? '' : 'display:none'">
+              <el-form-item prop="nome">
+                <el-input v-model="cadastroForm.nome" placeholder="Nome completo" />
               </el-form-item>
-              <div class="all-terms">
-                <div class="check-terms">
-                  <el-form-item prop="termos">
-                    <el-checkbox
-                      v-model="cadastroForm.termos"
-                      label="Li e aceito os Termos de Uso."
-                      size="large"
-                    />
-                    <el-icon v-if="!cadastroForm.proprietario" @click="$router.push('/terms')"><Connection /></el-icon>
-                    <el-icon v-if="cadastroForm.proprietario" @click="$router.push('/terms-owner')"><Connection /></el-icon>
-                  </el-form-item>
-                </div>
-                <div class="check-terms">
-                  <el-form-item prop="privacidade">
-                    <el-checkbox
-                      v-model="cadastroForm.privacidade"
-                      label="Li e aceito a Política de Privacidade."
-                      size="large"
-                    />
-                    <el-icon @click="$router.push('/politics')"><Connection /></el-icon>
-                  </el-form-item>
-                </div>
+              <el-form-item prop="email">
+                <el-input v-model="cadastroForm.email" placeholder="Email" />
+              </el-form-item>
+              <el-form-item prop="senha">
+                <el-input
+                  v-model="cadastroForm.senha"
+                  placeholder="Senha"
+                  type="password"
+                  show-password
+                />
+              </el-form-item>
+              <div class="checks">
+                <el-checkbox
+                  v-model="cadastroForm.proprietario"
+                  label="É proprietário?"
+                  size="large"
+                  prop="proprietario"
+                />
+                <el-form-item v-if="cadastroForm.proprietario" prop="doc">
+                  <el-input v-model="cadastroForm.doc" placeholder="CPF" />
+                </el-form-item>
+              </div>
+            </div>
+            <div class="all-terms" :style="continuar ? 'display:none' : ''">
+              <div class="check-terms">
+                <el-form-item prop="termos">
+                  <el-checkbox
+                    v-model="cadastroForm.termos"
+                    label="Li e aceito os Termos de Uso."
+                    size="large"
+                  />
+                  <el-icon v-if="!cadastroForm.proprietario" @click="$router.push('/terms')"
+                    ><Connection
+                  /></el-icon>
+                  <el-icon v-if="cadastroForm.proprietario" @click="$router.push('/terms-owner')"
+                    ><Connection
+                  /></el-icon>
+                </el-form-item>
+              </div>
+              <div class="check-terms">
+                <el-form-item prop="privacidade">
+                  <el-checkbox
+                    v-model="cadastroForm.privacidade"
+                    label="Li e aceito a Política de Privacidade."
+                    size="large"
+                  />
+                  <el-icon @click="$router.push('/politics')"><Connection /></el-icon>
+                </el-form-item>
               </div>
             </div>
           </el-form>
         </div>
         <div class="login-btn">
           <div>
-            <el-button type="primary" round @click="handleRegister(cadastroFormRef)"
+            <el-button
+              v-if="!continuar"
+              type="primary"
+              round
+              @click="handleRegister(cadastroFormRef)"
               >Criar conta</el-button
+            >
+            <el-button v-if="continuar" type="primary" round @click="continuar = false"
+              >Continuar</el-button
             >
           </div>
         </div>
@@ -365,6 +380,16 @@ function getUser(token: string) {
   display: grid;
   grid-template-columns: 12fr 1fr;
   align-items: center;
+}
+
+.back {
+  position: relative;
+  bottom: 100px;
+  cursor: pointer;
+}
+
+.back:hover {
+  color: #409eff;
 }
 
 .container-btn {
@@ -429,6 +454,7 @@ function getUser(token: string) {
   padding: 20px 32px;
   flex-direction: column;
   gap: 16px;
+  justify-content: center;
 }
 
 .all-terms {
