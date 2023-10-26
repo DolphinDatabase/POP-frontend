@@ -17,7 +17,7 @@ jobs:
     - name: Determine branch
       id: branch
       run: echo "::set-output name=branch::${{ github.ref }}"
-      
+
     - name: Get the latest Docker image tag
       id: get_last_tag
       run: |
@@ -60,3 +60,11 @@ jobs:
         docker build -t $DOCKER_IMAGE:$FINAL_TAG .
         echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
         docker push $DOCKER_IMAGE:$FINAL_TAG
+
+    - name: Show success message and image tag
+      run: |
+        IMAGE_TAG=${{ steps.increment_tag.outputs.tag }}
+        SUFFIX=${{ steps.set_suffix.outputs.suffix }}
+        FINAL_TAG="$IMAGE_TAG-$SUFFIX"
+        echo "Docker image built and pushed successfully with tag: $DOCKER_IMAGE:$FINAL_TAG"
+      
