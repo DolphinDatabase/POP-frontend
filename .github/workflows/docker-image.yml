@@ -18,24 +18,6 @@ jobs:
       id: branch
       run: echo "::set-output name=branch::${{ github.ref }}"
 
-    - name: Get the latest Docker image tag
-      id: get_last_tag
-      run: |
-        LAST_TAG=$(curl -s -H "Authorization: Bearer ${{ secrets.DOCKER_HUB_TOKEN }}" -X GET "https://hub.docker.com/repository/docker/dolphindatabase/visiona-front/tags/?page_size=1" | jq -r '.results[0].name')
-        echo "::set-output name=tag::$(jq -r '.results[0].name' <<< "$LAST_TAG")"
-
-    - name: Increment the Docker image tag
-      id: increment_tag
-      run: |
-        LAST_TAG=${{ steps.get_last_tag.outputs.tag }}
-        IFS='.' read -ra VERSION <<< "$LAST_TAG"
-        MAJOR=${VERSION[0]}
-        MINOR=${VERSION[1]}
-        PATCH=${VERSION[2]}
-        PATCH=$((PATCH + 1))
-        NEW_TAG="$MAJOR.$MINOR.$PATCH"
-        echo "::set-output name=tag::$NEW_TAG"
-
     - name: Set image tag suffix
       id: set_suffix
       run: |
@@ -53,17 +35,9 @@ jobs:
         DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
         DOCKER_IMAGE: dolphindatabase/visiona-front
       run: |
-        IMAGE_TAG=${{ steps.increment_tag.outputs.tag }}
+        IMAGE_TAG=latest
         SUFFIX=${{ steps.set_suffix.outputs.suffix }}
         FINAL_TAG="$IMAGE_TAG-$SUFFIX"
         docker build -t $DOCKER_IMAGE:$FINAL_TAG .
         echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
         docker push $DOCKER_IMAGE:$FINAL_TAG
-
-    - name: Show success message and image tag
-      run: |
-        IMAGE_TAG=${{ steps.increment_tag.outputs.tag }}
-        SUFFIX=${{ steps.set_suffix.outputs.suffix }}
-        FINAL_TAG="$IMAGE_TAG-$SUFFIX"
-        echo "Docker image built and pushed successfully with tag: $DOCKER_IMAGE:$FINAL_TAG"
-      
