@@ -40,9 +40,11 @@ function fecharOnBoard() {
   onBoardState.value = false
 }
 
-function deleteUser(id: number) {
+function deleteUser() {
   api
-    .delete(`usuario/${id}`)
+    .delete('usuario/', {
+      headers: { Authorization: `Bearer ${token.value}` }
+    })
     .then(() => {
       setTimeout(() => {
         MensagemSucesso('A conta foi deletada com sucesso!')
@@ -57,13 +59,19 @@ function deleteUser(id: number) {
     })
 }
 
-function updateUser(id: number) {
+function updateUser() {
   api
-    .put(`usuario/${id}`, {
-      nome: user.value.nome,
-      doc: user.value.doc,
-      email: user.value.email
-    })
+    .put(
+      'usuario/',
+      {
+        nome: user.value.nome,
+        doc: user.value.doc,
+        email: user.value.email
+      },
+      {
+        headers: { Authorization: `Bearer ${token.value}` }
+      }
+    )
     .then(() => {
       getUser()
       setTimeout(() => {
@@ -423,7 +431,7 @@ function initMap(): void {
               </div>
             </el-form>
           </div>
-          <div class="del-user" @click="deleteUser(user.id)">
+          <div class="del-user" @click="deleteUser()">
             <h4>Excluir conta</h4>
           </div>
           <div class="upd-btn">
@@ -431,7 +439,7 @@ function initMap(): void {
               <el-button round @click="cancelUpdate">Cancelar</el-button>
             </div>
             <div>
-              <el-button type="primary" round @click="updateUser(user.id)">Salvar</el-button>
+              <el-button type="primary" round @click="updateUser()">Salvar</el-button>
             </div>
           </div>
         </div>

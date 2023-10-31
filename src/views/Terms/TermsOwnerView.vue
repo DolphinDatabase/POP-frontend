@@ -5,7 +5,7 @@ import {onMounted, ref} from 'vue'
 const termo = ref({text:""})
 
 onMounted(()=>{
-  api.get('termo/last?proprietario=true')
+  api.get('termo/?proprietario=true')
   .then(res=>{
     termo.value = res.data
   })

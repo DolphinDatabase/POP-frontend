@@ -11,11 +11,30 @@ const copyText = ref<string>('')
 let quill: any
 const next = ref(true)
 
-const terms = ref([{ param: '' }])
+const terms = ref([{ condicao: '' }])
+
+// {
+//   "id": 1,
+//   "texto": "çldjaidas",
+//   "grupo": "proprietario",
+//   "aceite": true,
+//   "condicoes": [
+//     {
+//       "texto": "condicao 1 ashduasdh",
+//       "servico": 1,
+//       "id": 1,
+//       "aceite": false
+//     },
+//     {
+//       "texto": "QUero receber spam maluco",
+//       "servico": 2
+//     }
+//   ]
+// }
 
 
 const addTerm = () => {
-  terms.value.push({ param: '' })
+  terms.value.push({ condicao: '' })
 }
 
 const removeTerm = (index: number) => {
@@ -39,7 +58,8 @@ function saveText() {
       'termo',
       {
         text: editorContent.value,
-        proprietario: true
+        grupo: 'proprietario',
+        condicoes: terms.value
       },
       {
         headers: { Authorization: `Bearer ${token.value}` }
@@ -60,7 +80,7 @@ function saveText() {
 
 function getTermo() {
   api
-    .get('termo/last?proprietario=true', {
+    .get('termo/?proprietario=true', {
       headers: { Authorization: `Bearer ${token.value}` }
     })
     .then((res) => {
@@ -102,7 +122,7 @@ onMounted(() => {
               <el-icon v-if="index != 0" @click="removeTerm(index)"><Close /></el-icon>
             </div>
             <el-input
-              v-model="term.param"
+              v-model="term.condicao"
               placeholder="Escreva um parâmetro de aceite"
               style="margin-bottom: 16px"
             />
@@ -120,6 +140,7 @@ onMounted(() => {
       <el-button type="primary" round @click="next = false">Continuar</el-button>
     </div>
     <div v-else>
+      <el-button round @click="cancelText">Cancelar</el-button>
       <el-button round @click="next = true">Voltar</el-button>
       <el-button type="primary" round @click="saveText">Salvar</el-button>
     </div>

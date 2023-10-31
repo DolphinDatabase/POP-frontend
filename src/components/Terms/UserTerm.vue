@@ -38,7 +38,8 @@ function saveText() {
       'termo',
       {
         text: editorContent.value,
-        proprietario: false
+        grupo: 'proprietario',
+        condicoes: terms.value
       },
       {
         headers: { Authorization: `Bearer ${token.value}` }
@@ -59,7 +60,7 @@ function saveText() {
 
 function getTermo() {
   api
-    .get('termo/last?proprietario=false', {
+    .get('termo/?proprietario=false', {
       headers: { Authorization: `Bearer ${token.value}` }
     })
     .then((res) => {
