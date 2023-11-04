@@ -23,7 +23,7 @@ interface TermsForm {
   condicoes: [
     {
       id: number
-      text: string
+      texto: string
       aceite: boolean
       servico: string
     }
@@ -61,7 +61,7 @@ const cadastroTerms = reactive<TermsForm>({
   condicoes: [
     {
       id: 0,
-      text: '',
+      texto: '',
       aceite: false,
       servico: ''
     }
@@ -77,9 +77,9 @@ const rules = reactive<FormRules<CadastroForm>>({
 })
 
 const rulesTerms = reactive<FormRules<TermsForm>>({
-  termos: [{ required: true, message: 'Por favor aceite os termos de uso.', trigger: 'blur' }],
+  termos: [{ required: false, message: 'Por favor aceite os termos de uso.', trigger: 'blur' }],
   privacidade: [
-    { required: true, message: 'Por favor aceite a política de privacidade.', trigger: 'blur' }
+    { required: false, message: 'Por favor aceite a política de privacidade.', trigger: 'blur' }
   ],
   condicoes: [{ required: false }]
 })
@@ -118,7 +118,8 @@ async function handleRegister(formEl: FormInstance | undefined) {
           grupo: cadastroForm.proprietario ? 'proprietario' : 'operador',
           senha: cadastroForm.senha
         })
-        .then(() => {
+        .then((res) => {
+          getTermo(res.data.access_token)
           formEl.resetFields()
         })
         .catch((err) => {
@@ -139,7 +140,7 @@ async function handleTerms(formEl: FormInstance | undefined) {
     if (valid) {
       api
         .put('termos', {
-          termos: cadastroTerms.termos,
+          aceite: cadastroTerms.termos,
           condicoes: cadastroTerms.condicoes
         })
         .then(() => {
@@ -193,15 +194,31 @@ function handleLogin() {
 
 function getUser(token: string) {
   api
-    .get('/auth', {
+    .get('auth', {
       headers: { Authorization: `Bearer ${token}` }
     })
     .then((res) => {
-      if (res.data.adm == false) {
-        router.push('/maps')
-      } else {
+      if (res.data.grupo == 'administrador') {
         router.push('/admin')
+      } else {
+        router.push('/maps')
       }
+    })
+}
+
+function getTermo(token: string) {
+  api
+    .get('termo', {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    .then((res) => {
+      if (res.data.grupo == 'proprietario') {
+        cadastroTerms.condicoes = res.data.condicoes
+      }
+      else {
+        console.log(res.data.condicoes, 'erro')
+      }
+
     })
 }
 </script>
@@ -378,11 +395,11 @@ function getUser(token: string) {
           >
             <div
               class="check-terms"
-              v-for="(condicao, index) in cadastroTerms.condicoes"
-              :key="index"
+              v-for="condicao in cadastroTerms.condicoes"
+              :key="condicao.id"
             >
               <el-form-item prop="condicoes">
-                <el-checkbox v-model="condicao.aceite" :label="condicao.text" size="large" />
+                <el-checkbox v-model="condicao.aceite" :label="condicao.texto" size="large" class="break-text"/>
               </el-form-item>
             </div>
             <div class="check-terms">
@@ -403,7 +420,7 @@ function getUser(token: string) {
             <div class="check-terms">
               <el-form-item prop="privacidade">
                 <el-checkbox
-                  v-model="cadastroTerms.termos"
+                  v-model="cadastroTerms.privacidade"
                   label="Li e aceito a Política de Privacidade."
                   size="large"
                 />
@@ -432,6 +449,11 @@ function getUser(token: string) {
 </template>
 
 <style scoped>
+.break-text {
+  white-space: normal; 
+  margin-bottom: 20px;
+}
+
 .terms {
   display: grid;
   gap: 24px;

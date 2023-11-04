@@ -46,7 +46,7 @@ const router = createRouter({
       name: 'maps',
       component: MapsView,
       meta: {
-        requiresAuth: true
+        requiresAuth: false
       }
     },
   ]

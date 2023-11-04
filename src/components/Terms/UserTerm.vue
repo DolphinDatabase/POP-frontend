@@ -11,15 +11,15 @@ const copyText = ref<string>('')
 let quill: any
 const next = ref(true)
 
-const terms = ref([{ param: '' }])
+const condicoes = ref()
 
 const addTerm = () => {
-  terms.value.push({ param: '' })
+  condicoes.value.push({ texto: '' })
 }
 
 const removeTerm = (index: number) => {
   if (index !== -1) {
-    terms.value.splice(index, 1)
+    condicoes.value.splice(index, 1)
   }
 }
 
@@ -33,13 +33,20 @@ function cancelText() {
 }
 
 function saveText() {
+  const updatedCondicoes = condicoes.value.map((condicao: any) => {
+    if (!condicao.servico) {
+      return { ...condicao, servico: null };
+    }
+    return condicao;
+  });
+
   api
     .post(
       'termo',
       {
-        text: editorContent.value,
-        grupo: 'proprietario',
-        condicoes: terms.value
+        texto: editorContent.value,
+        grupo: 'operador',
+        condicoes: updatedCondicoes
       },
       {
         headers: { Authorization: `Bearer ${token.value}` }
@@ -60,15 +67,32 @@ function saveText() {
 
 function getTermo() {
   api
-    .get('termo/?proprietario=false', {
+    .get('termo', {
       headers: { Authorization: `Bearer ${token.value}` }
     })
     .then((res) => {
-      editorContent.value = res.data.text
-      quill.root.innerHTML = res.data.text
-      copyText.value = res.data.text
+      const termos = res.data.termos
+
+      const operadorTermos = termos.filter((termo: any) => termo.grupo === 'operador')
+
+      operadorTermos.forEach((termo: any) => {
+        editorContent.value = termo.texto
+        quill.root.innerHTML = termo.texto
+        copyText.value = termo.texto
+        const termoCondicoes = termo.condicoes.map((c: any) => ({
+          id: c.id,
+          texto: c.texto,
+          termo_id: c.termo_id,
+          servico: c.servico
+        }))
+        condicoes.value = termoCondicoes
+      })
+    })
+    .catch((error) => {
+      console.error('erro:', error)
     })
 }
+
 onMounted(() => {
   quill = new Quill('#editor', {
     theme: 'snow',
@@ -79,10 +103,9 @@ onMounted(() => {
     editorContent.value = quill.root.innerHTML
   })
 
-  getTermo()
-
   const route = useRoute()
   token.value = route.meta.token
+  getTermo()
 })
 </script>
 
@@ -94,15 +117,18 @@ onMounted(() => {
     </div>
     <div :style="next ? 'display:none' : ''">
       <p>Adicione parâmetros para os termos do usuário provedor de dados</p>
-      <div v-for="(term, index) in terms" :key="index">
+      <div v-for="(condicao, index) in condicoes" :key="condicao.id">
         <div class="row">
           <div class="col s2">
             <div class="param-label">
-              <label>Parâmetro {{ index + 1 }}</label>
-              <el-icon v-if="index != 0" @click="removeTerm(index)"><Close /></el-icon>
+              <div>
+                <label>Parâmetro {{ index + 1 }}</label>
+                <p v-if="condicao.servico == 'envio_email'">Serviço para envio de e-mail</p>
+              </div>
+              <el-icon v-if="condicao.id != 0" @click="removeTerm(index)"><Close /></el-icon>
             </div>
             <el-input
-              v-model="term.param"
+              v-model="condicao.texto"
               placeholder="Escreva um parâmetro de aceite"
               style="margin-bottom: 16px"
             />
