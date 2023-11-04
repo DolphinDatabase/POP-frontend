@@ -8,7 +8,6 @@ onMounted(() => {
   api
     .get('termo/operador')
     .then((res) => {
-      console.log(res.data.texto)
       termo.value.texto = res.data.texto
     })
     .catch((error) => {

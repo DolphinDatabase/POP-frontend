@@ -38,6 +38,22 @@ const options = ref(['Início', 'Solução', 'Sobre'])
 const chooseOpt = ref('Início')
 const loginModal = ref(false)
 const cadastroModal = ref(false)
+const token = ref('')
+const termos = ref({
+  id: 0,
+  grupo: '',
+  data: '',
+  texto: '',
+  aceite: false,
+  condicoes: [
+    {
+      id: 0,
+      texto: '',
+      aceite: false,
+      servico: ''
+    }
+  ]
+})
 const storeToken = (token: string, expiration: number) => {
   authStore.setToken(token, expiration)
 }
@@ -120,6 +136,7 @@ async function handleRegister(formEl: FormInstance | undefined) {
         })
         .then((res) => {
           getTermo(res.data.access_token)
+          token.value = res.data.access_token
           formEl.resetFields()
         })
         .catch((err) => {
@@ -139,10 +156,20 @@ async function handleTerms(formEl: FormInstance | undefined) {
   await formEl.validate((valid, fields) => {
     if (valid) {
       api
-        .put('termos', {
-          aceite: cadastroTerms.termos,
-          condicoes: cadastroTerms.condicoes
-        })
+        .put(
+          'termo',
+          {
+            id: termos.value.id,
+            grupo: termos.value.grupo,
+            data: termos.value.data,
+            texto: termos.value.texto,
+            aceite: cadastroTerms.termos,
+            condicoes: cadastroTerms.condicoes
+          },
+          {
+            headers: { Authorization: `Bearer ${token.value}` }
+          }
+        )
         .then(() => {
           setTimeout(() => {
             MensagemSucesso('Cadastro feito com sucesso!')
@@ -212,13 +239,12 @@ function getTermo(token: string) {
       headers: { Authorization: `Bearer ${token}` }
     })
     .then((res) => {
+      termos.value = res.data
       if (res.data.grupo == 'proprietario') {
         cadastroTerms.condicoes = res.data.condicoes
-      }
-      else {
+      } else {
         console.log(res.data.condicoes, 'erro')
       }
-
     })
 }
 </script>
@@ -393,13 +419,14 @@ function getTermo(token: string) {
             ref="cadastroTermsRef"
             size="default"
           >
-            <div
-              class="check-terms"
-              v-for="condicao in cadastroTerms.condicoes"
-              :key="condicao.id"
-            >
+            <div class="check-terms" v-for="condicao in cadastroTerms.condicoes" :key="condicao.id">
               <el-form-item prop="condicoes">
-                <el-checkbox v-model="condicao.aceite" :label="condicao.texto" size="large" class="break-text"/>
+                <el-checkbox
+                  v-model="condicao.aceite"
+                  :label="condicao.texto"
+                  size="large"
+                  class="break-text"
+                />
               </el-form-item>
             </div>
             <div class="check-terms">
@@ -450,7 +477,7 @@ function getTermo(token: string) {
 
 <style scoped>
 .break-text {
-  white-space: normal; 
+  white-space: normal;
   margin-bottom: 20px;
 }
 

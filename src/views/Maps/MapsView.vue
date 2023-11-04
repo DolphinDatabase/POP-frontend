@@ -88,7 +88,7 @@ function deleteUser() {
 function updateUser() {
   api
     .put(
-      'usuario/',
+      'usuario',
       {
         nome: user.value.nome,
         doc: user.value.doc,
@@ -192,7 +192,8 @@ function initMap(): void {
     const geoJsonStyle = {
       fillColor: 'white',
       strokeColor: 'white',
-      strokeWeight: 2
+      strokeWeight: 2,
+      zIndex: 1
     }
 
     const circleOptions = {
@@ -225,13 +226,16 @@ function initMap(): void {
         map.data.remove(feature)
       })
     })
-
     google.maps.event.addListener(circle, 'dragend', () => {
       const newCenter = circle.getCenter()
       const newRadius = circle.getRadius()
       continueLoad.value = true
-      otherPos.value.lat = newCenter.lat
-      otherPos.value.lng = newCenter.lng
+
+      if (otherPos.value) {
+        otherPos.value.lat = newCenter.lat()
+        otherPos.value.lng = newCenter.lng()
+      }
+
       get_glebas(newCenter.lat(), newCenter.lng(), newRadius)
     })
 
@@ -253,6 +257,17 @@ function initMap(): void {
 
     map.data.addListener('click', (event) => {
       const properties = event.feature.h
+
+      const plotCoordinates = event.latLng
+
+      const newZoomLevel = 16
+      const newPosition = plotCoordinates
+
+      const sidePanel = document.getElementById('side-panel')
+
+      map.setZoom(newZoomLevel)
+      map.setCenter(newPosition)
+
       api
         .get(`operacao/${properties.operacao_id}`, {
           headers: { Authorization: `Bearer ${token.value}` }
@@ -261,6 +276,8 @@ function initMap(): void {
           if (data.status == 200) {
             drawer.value = true
             op.value = data.data
+            sidePanel!.innerHTML = JSON.stringify(data.data, null, 2)
+            sidePanel!.style.display = 'block'
           }
         })
     })
@@ -440,32 +457,39 @@ function initMap(): void {
       </el-dialog>
     </div>
     <div class="terms-modal" v-if="terms">
-      <el-dialog v-model="terms">
-        teste
-      </el-dialog>
+      <el-dialog v-model="terms"> teste </el-dialog>
     </div>
-    <el-drawer v-model="drawer" title="I am the title" :with-header="false">
-      <h6>Plantio</h6>
-      <!-- <p>Início plantio: {{ op.inicio_plantio }}</p>
-      <p>Fim plantio: {{ op.fim_plantio }}</p>
-      <p>Início colheita: {{ op.inicio_colheita }}</p>
-      <p>Fim colheita: {{ op.fim_colheita }}</p>
-      <p>Estado: {{ op.estado.descricao }}</p>
-      <p>Município: {{ op.municipio.descricao }}</p> -->
-      <h6>Sistema de produção Agrícola</h6>
-      <!-- <p>Tipo Solo: {{ op.solo.descricao }}</p>
-      <p>Irrigação: {{ op.irrigacao.descricao }}</p>
-      <p>Tipo cultivo: {{ op.cultivo.descricao }}</p>
-      <p>Grão/Semente: {{ op.grao_semente.descricao }}</p>
-      <p>Ciclo do cultivar: {{ op.ciclo.descricao }}</p> -->
-      <h6>Empreendimento</h6>
-      <!-- <p>Cesta: {{ op.empreendimento.cesta }}</p>
-      <p>Zoneamento: {{ op.empreendimento.zoneamento }}</p>
-      <p>Variedade: {{ op.empreendimento.variedade }}</p>
-      <p>Produto: {{ op.empreendimento.produto }}</p>
-      <p>Modalidade: {{ op.empreendimento.modalidade }}</p>
-      <p>Atividade: {{ op.empreendimento.atividade }}</p>
-      <p>Finalidade: {{ op.empreendimento.finalidade }}</p> -->
+    <el-drawer v-model="drawer" title="I am the title" :with-header="false" class="drawer">
+      <div class="drawer-details">
+        <div>
+          <h6>Plantio</h6>
+          <p>Início plantio: {{ op.inicio_plantio }}</p>
+          <p>Fim plantio: {{ op.fim_plantio }}</p>
+          <p>Início colheita: {{ op.inicio_colheita }}</p>
+          <p>Fim colheita: {{ op.fim_colheita }}</p>
+          <p>Estado: {{ op.estado.descricao }}</p>
+          <p>Município: {{ op.municipio.descricao }}</p>
+        </div>
+        <div class="drawer-content">
+          <h6>Sistema de produção Agrícola</h6>
+          <p>Tipo Solo: {{ op.solo.descricao }}</p>
+          <p>Irrigação: {{ op.irrigacao.descricao }}</p>
+          <p>Tipo cultivo: {{ op.cultivo.descricao }}</p>
+          <p>Grão/Semente: {{ op.grao_semente.descricao }}</p>
+          <p>Ciclo do cultivar: {{ op.ciclo.descricao }}</p>
+        </div>
+        <div>
+          <h6>Empreendimento</h6>
+          <p>Cesta: {{ op.empreendimento.cesta }}</p>
+          <p>Zoneamento: {{ op.empreendimento.zoneamento }}</p>
+          <p>Variedade: {{ op.empreendimento.variedade }}</p>
+          <p>Produto: {{ op.empreendimento.produto }}</p>
+          <p>Modalidade: {{ op.empreendimento.modalidade }}</p>
+          <p>Atividade: {{ op.empreendimento.atividade }}</p>
+          <p>Finalidade: {{ op.empreendimento.finalidade }}</p>
+        </div>
+        <h6>Predição</h6>
+      </div>
       <apexchart width="100%" type="line" :options="chartOptions" :series="chartSeries"></apexchart>
     </el-drawer>
   </div>
@@ -480,8 +504,28 @@ function initMap(): void {
   padding: 8px 16px;
   border: 1px solid grey;
 }
-.image {
-  width: 120px;
+
+.drawer p {
+  font-size: 12px;
+}
+
+.drawer h6 {
+  margin-bottom: 0;
+}
+
+.drawer-details {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  word-break: break-word;
+  gap: 4px;
+  justify-content: center;
+}
+
+.drawer-content {
+  border-left: 1px solid #282a2c;
+  border-right: 1px solid #282a2c;
+  padding: 0 16px;
+  margin: 0 8px;
 }
 
 footer {
@@ -595,6 +639,6 @@ footer img {
 
 .el-drawer.ltr,
 .el-drawer.rtl {
-  width: 40% !important;
+  width: 45% !important;
 }
 </style>
