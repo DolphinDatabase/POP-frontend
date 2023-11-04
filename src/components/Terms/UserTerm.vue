@@ -9,6 +9,19 @@ const editorContent = ref<string>('')
 const token = ref()
 const copyText = ref<string>('')
 let quill: any
+const next = ref(true)
+
+const terms = ref([{ param: '' }])
+
+const addTerm = () => {
+  terms.value.push({ param: '' })
+}
+
+const removeTerm = (index: number) => {
+  if (index !== -1) {
+    terms.value.splice(index, 1)
+  }
+}
 
 function cancelText() {
   getTermo()
@@ -75,11 +88,41 @@ onMounted(() => {
 <template>
   <div class="editor-container">
     <h3>Termos do usuário</h3>
-    <div id="editor"></div>
+    <div :style="next ? '' : 'display:none'">
+      <div id="editor"></div>
+    </div>
+    <div :style="next ? 'display:none' : ''">
+      <p>Adicione parâmetros para os termos do usuário provedor de dados</p>
+      <div v-for="(term, index) in terms" :key="index">
+        <div class="row">
+          <div class="col s2">
+            <div class="param-label">
+              <label>Parâmetro {{ index + 1 }}</label>
+              <el-icon v-if="index != 0" @click="removeTerm(index)"><Close /></el-icon>
+            </div>
+            <el-input
+              v-model="term.param"
+              placeholder="Escreva um parâmetro de aceite"
+              style="margin-bottom: 16px"
+            />
+          </div>
+        </div>
+      </div>
+      <el-button @click="addTerm" class="btn waves-effect waves-light"
+        ><el-icon><Plus /></el-icon
+      ></el-button>
+    </div>
   </div>
   <div class="adm-btn">
-    <el-button round @click="cancelText">Cancelar</el-button>
-    <el-button type="primary" round @click="saveText">Salvar</el-button>
+    <div v-if="next">
+      <el-button round @click="cancelText">Cancelar</el-button>
+      <el-button type="primary" round @click="next = false">Continuar</el-button>
+    </div>
+    <div v-else>
+      <el-button round @click="cancelText">Cancelar</el-button>
+      <el-button round @click="next = true">Voltar</el-button>
+      <el-button type="primary" round @click="saveText">Salvar</el-button>
+    </div>
   </div>
 </template>
 
@@ -87,14 +130,21 @@ onMounted(() => {
 .editor-container {
   padding: 8px 40px;
   padding-bottom: 0;
+  width: 85vw;
 }
 
 #editor {
   height: 65vh;
 }
 
+.param-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
 .adm-btn {
-  position: relative;
+  position: absolute;
   bottom: 0;
   background: white;
   width: 100%;
@@ -105,5 +155,13 @@ onMounted(() => {
 <style>
 .adm-btn .el-button.el-button {
   margin: 16px 36px;
+}
+
+.param-label .el-icon {
+  cursor: pointer;
+}
+
+.param-label .el-icon:hover {
+  color: red;
 }
 </style>

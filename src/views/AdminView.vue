@@ -71,10 +71,12 @@ onMounted(() => {
         </el-dropdown>
       </div>
     </div>
-    <el-tabs tab-position="left" style="position: absolute" class="demo-tabs">
-      <el-tab-pane label="Usuário"><user-term /></el-tab-pane>
-      <el-tab-pane label="Proprietário"><owner-term /></el-tab-pane>
-    </el-tabs>
+    <div class="tabs">
+      <el-tabs tab-position="left" class="demo-tabs">
+        <el-tab-pane label="Usuário"><user-term /></el-tab-pane>
+        <el-tab-pane label="Proprietário"><owner-term /></el-tab-pane>
+      </el-tabs>
+    </div>
   </div>
 </template>
 
@@ -92,23 +94,6 @@ onMounted(() => {
   height: 100%;
 }
 
-.editor-container {
-  padding: 8px 40px;
-  padding-bottom: 0;
-}
-
-#editor {
-  height: 65vh;
-}
-
-.adm-btn {
-  position: relative;
-  bottom: 0;
-  background: white;
-  width: 100%;
-  text-align: right;
-}
-
 .usr-options {
   display: flex;
   gap: 16px;
@@ -119,5 +104,13 @@ onMounted(() => {
 <style>
 .adm-btn .el-button.el-button {
   margin: 16px 36px;
+}
+
+.tabs .el-tab-pane {
+  width: 85vw;
+}
+
+.tabs .el-tabs__content {
+  height: calc(100vh - 79px);
 }
 </style>
