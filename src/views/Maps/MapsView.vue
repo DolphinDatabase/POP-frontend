@@ -334,20 +334,6 @@ function initMap(): void {
         }
 
         circle.setCenter(place.geometry.location)
-
-        google.maps.event.addListener(circle, 'drag', () => {
-          continueLoad.value = false
-          map.data.forEach((feature) => {
-            map.data.remove(feature)
-          })
-        })
-
-        google.maps.event.addListener(circle, 'dragend', () => {
-          const newCenter = circle.getCenter()
-          const newRadius = circle.getRadius()
-          continueLoad.value = true
-          get_glebas(newCenter.lat(), newCenter.lng(), newRadius)
-        })
       })
       const maxZoom = 5
       map.fitBounds(bounds)
