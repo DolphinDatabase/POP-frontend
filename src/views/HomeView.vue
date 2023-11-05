@@ -172,7 +172,7 @@ async function handleTerms() {
       )
       .then(() => {
         setTimeout(() => {
-          MensagemSucesso('Cadastro feito com sucesso!')
+          MensagemSucesso('Termo aceito com sucesso!')
         }, 1000)
         loginModal.value = true
         cadastroModal.value = false
@@ -537,10 +537,12 @@ function getTermo(token: string) {
 
 <style scoped>
 .break-text {
+  word-break: break-word;
   white-space: normal;
   margin-bottom: 20px;
 }
 .break-text-only {
+  word-break: break-word;
   white-space: normal;
   margin-bottom: 0;
 }
@@ -772,5 +774,9 @@ footer img {
 
 .checks .el-form-item {
   margin-bottom: 4px;
+}
+
+.check-terms .el-checkbox {
+  white-space: wrap !important;
 }
 </style>

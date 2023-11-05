@@ -222,7 +222,7 @@ async function handleTerms() {
       .then(() => {
         terms.value = false
         setTimeout(() => {
-          MensagemSucesso('Termo(s) aceito(s) com sucesso!')
+          MensagemSucesso('Alteração feita com sucesso!')
         }, 1000)
       })
       .catch((err) => {
@@ -664,15 +664,6 @@ function initMap(): void {
   height: 20px;
   padding: 8px 16px;
   border: 1px solid grey;
-}
-
-.break-text {
-  white-space: normal;
-  margin-bottom: 20px;
-}
-.break-text-only {
-  white-space: normal;
-  margin-bottom: 0;
 }
 
 .drawer p {
