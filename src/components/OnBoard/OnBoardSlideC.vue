@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import OnBoardItem from './OnBoardItem.vue'
 
-const items = ref(['Empreendedorismo', 'Cultivo', 'Plantio'])
+const items = ref(['Empreendedorismo', 'Cultivo', 'Plantio', 'Gráfico com precição de NDVI'])
 </script>
 <template>
   <div class="on-board-c">
@@ -10,7 +10,7 @@ const items = ref(['Empreendedorismo', 'Cultivo', 'Plantio'])
     <div class="on-board-item-c">
       <OnBoardItem v-for="(item, index) in items" :key="index" :texto="item" />
     </div>
-    <img src="../../assets/slides/glebas_info.svg" alt="" />
+    <img src="../../assets/slides/details-chart.png" alt="" />
   </div>
 </template>
 
@@ -27,6 +27,6 @@ const items = ref(['Empreendedorismo', 'Cultivo', 'Plantio'])
 }
 
 .on-board-c img {
-  width: 500px;
+  width: 400px;
 }
 </style>
