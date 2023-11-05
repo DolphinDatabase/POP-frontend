@@ -38,7 +38,9 @@ const options = ref(['Início', 'Solução', 'Sobre'])
 const chooseOpt = ref('Início')
 const loginModal = ref(false)
 const cadastroModal = ref(false)
+const statusMsg = ref(false)
 const token = ref('')
+const role = ref('')
 const termos = ref({
   id: 0,
   grupo: '',
@@ -151,43 +153,48 @@ async function handleRegister(formEl: FormInstance | undefined) {
   })
 }
 
-async function handleTerms(formEl: FormInstance | undefined) {
-  if (!formEl) return
-  await formEl.validate((valid, fields) => {
-    if (valid) {
-      api
-        .put(
-          'termo',
-          {
-            id: termos.value.id,
-            grupo: termos.value.grupo,
-            data: termos.value.data,
-            texto: termos.value.texto,
-            aceite: cadastroTerms.termos,
-            condicoes: cadastroTerms.condicoes
-          },
-          {
-            headers: { Authorization: `Bearer ${token.value}` }
+async function handleTerms() {
+  if (termos.value.aceite) {
+    api
+      .put(
+        'termo',
+        {
+          id: termos.value.id,
+          grupo: termos.value.grupo,
+          data: termos.value.data,
+          texto: termos.value.texto,
+          aceite: termos.value.aceite,
+          condicoes: cadastroTerms.condicoes
+        },
+        {
+          headers: { Authorization: `Bearer ${token.value}` }
+        }
+      )
+      .then(() => {
+        setTimeout(() => {
+          MensagemSucesso('Cadastro feito com sucesso!')
+        }, 1000)
+        loginModal.value = true
+        cadastroModal.value = false
+        if (loginModal.value == true) {
+          if (role.value == 'administrador') {
+            router.push('/admin')
+          } else {
+            router.push('/maps')
           }
-        )
-        .then(() => {
-          setTimeout(() => {
-            MensagemSucesso('Cadastro feito com sucesso!')
-          }, 1000)
-          loginModal.value = true
-          cadastroModal.value = false
-          formEl.resetFields()
-        })
-        .catch((err) => {
-          console.log(err)
-          setTimeout(() => {
-            MensagemErro('Houve um erro ao concluir o cadastro!')
-          }, 1000)
-        })
-    } else {
-      console.log('error submit', fields)
-    }
-  })
+        }
+      })
+      .catch((err) => {
+        console.log(err)
+        setTimeout(() => {
+          MensagemErro('Houve um erro ao concluir o cadastro!')
+        }, 1000)
+      })
+  } else {
+    setTimeout(() => {
+      MensagemErro('Aceite os termos de uso, por favor!')
+    }, 1000)
+  }
 }
 
 function handleLogin() {
@@ -205,6 +212,9 @@ function handleLogin() {
     .then((response) => {
       if (response.status == 200) {
         getUser(response.data.access_token)
+        getTermo(response.data.access_token)
+        token.value = response.data.access_token
+        role.value = response.data.role
         return response.data
       }
     })
@@ -231,6 +241,12 @@ function getUser(token: string) {
         router.push('/maps')
       }
     })
+    .catch((err) => {
+      console.log('erro: ', err.response.data.detail)
+      if (err.response.status === 403) {
+        statusMsg.value = true
+      }
+    })
 }
 
 function getTermo(token: string) {
@@ -240,10 +256,12 @@ function getTermo(token: string) {
     })
     .then((res) => {
       termos.value = res.data
-      if (res.data.grupo == 'proprietario') {
+      if (res.data.grupo == 'proprietario' || role.value == 'proprietario') {
+        cadastroTerms.condicoes = res.data.condicoes
+      } else if (res.data.grupo == 'operador' || role.value == 'operador') {
         cadastroTerms.condicoes = res.data.condicoes
       } else {
-        console.log(res.data.condicoes, 'erro')
+        console.log('aqui')
       }
     })
 }
@@ -313,11 +331,15 @@ function getTermo(token: string) {
         <img src="../assets/capa.svg" alt="" />
       </div>
       <div class="modal-info">
-        <div>
+        <div v-if="!statusMsg">
           <h2>Login</h2>
           <p>Digite as informações necessárias</p>
         </div>
-        <div>
+        <div v-else>
+          <h2>Atenção!</h2>
+          <p>Para utilizar a plataforma aceite os termos abaixo:</p>
+        </div>
+        <div :style="statusMsg ? 'display:none' : ''">
           <el-form :model="login" label-width="120px" label-position="top">
             <el-form-item>
               <el-input v-model="login.username" placeholder="Email" />
@@ -332,7 +354,52 @@ function getTermo(token: string) {
             </el-form-item>
           </el-form>
         </div>
-        <div class="login-btn">
+        <div class="all-terms" :style="statusMsg ? '' : 'display:none'">
+          <el-form
+            :model="cadastroTerms"
+            :rules="rulesTerms"
+            class="demo-ruleForm"
+            label-width="120px"
+            label-position="top"
+            status-icon
+            ref="cadastroTermsRef"
+            size="default"
+          >
+            <div class="check-terms" v-for="condicao in cadastroTerms.condicoes" :key="condicao.id">
+              <el-form-item prop="condicoes">
+                <el-checkbox
+                  v-model="condicao.aceite"
+                  :label="condicao.texto"
+                  size="large"
+                  :class="cadastroTerms.condicoes.length > 1 ? 'break-text' : 'break-text-only'"
+                />
+              </el-form-item>
+            </div>
+            <div class="check-terms">
+              <el-form-item prop="termos">
+                <el-checkbox
+                  v-model="termos.aceite"
+                  label="Li e aceito os Termos de Uso e Política de Privacidade."
+                  size="large"
+                  class="break-text-only"
+                />
+                <el-icon v-if="!cadastroForm.proprietario" @click="$router.push('/terms')"
+                  ><Connection
+                /></el-icon>
+                <el-icon v-if="cadastroForm.proprietario" @click="$router.push('/terms-owner')"
+                  ><Connection
+                /></el-icon>
+              </el-form-item>
+            </div>
+          </el-form>
+        </div>
+        <div class="login-btn" v-if="statusMsg">
+          <div>
+            <el-button type="primary" round @click="handleTerms()">Enviar</el-button>
+          </div>
+        </div>
+
+        <div class="login-btn" v-else>
           <div>
             <el-button type="primary" round @click="handleLogin()">Entrar</el-button>
           </div>
@@ -362,11 +429,14 @@ function getTermo(token: string) {
       </div>
       <div class="modal-register">
         <div class="modal-title">
-          <div v-if="!continuar" @click="continuar = true">
+          <div v-if="!continuar" @click="continuar = true" class="back-content">
             <el-icon class="back"><Back /></el-icon>
+            <p>Voltar</p>
           </div>
-          <h2>Criar conta</h2>
-          <p>Digite as informações necessárias</p>
+          <div v-else>
+            <h2>Criar conta</h2>
+            <p>Digite as informações necessárias</p>
+          </div>
         </div>
         <div :style="continuar ? '' : 'display:none'">
           <el-form
@@ -410,7 +480,7 @@ function getTermo(token: string) {
         </div>
         <div class="all-terms" :style="continuar ? 'display:none' : ''">
           <el-form
-            :model="cadastroForm"
+            :model="cadastroTerms"
             :rules="rulesTerms"
             class="demo-ruleForm"
             label-width="120px"
@@ -425,15 +495,15 @@ function getTermo(token: string) {
                   v-model="condicao.aceite"
                   :label="condicao.texto"
                   size="large"
-                  class="break-text"
+                  :class="cadastroTerms.condicoes.length > 1 ? 'break-text' : 'break-text-only'"
                 />
               </el-form-item>
             </div>
             <div class="check-terms">
               <el-form-item prop="termos">
                 <el-checkbox
-                  v-model="cadastroTerms.termos"
-                  label="Li e aceito os Termos de Uso."
+                  v-model="termos.aceite"
+                  label="Li e aceito os Termos de Uso e Política de Privacidade."
                   size="large"
                 />
                 <el-icon v-if="!cadastroForm.proprietario" @click="$router.push('/terms')"
@@ -444,21 +514,11 @@ function getTermo(token: string) {
                 /></el-icon>
               </el-form-item>
             </div>
-            <div class="check-terms">
-              <el-form-item prop="privacidade">
-                <el-checkbox
-                  v-model="cadastroTerms.privacidade"
-                  label="Li e aceito a Política de Privacidade."
-                  size="large"
-                />
-                <el-icon @click="$router.push('/politics')"><Connection /></el-icon>
-              </el-form-item>
-            </div>
           </el-form>
         </div>
         <div class="login-btn">
           <div>
-            <el-button v-if="!continuar" type="primary" round @click="handleTerms(cadastroTermsRef)"
+            <el-button v-if="!continuar" type="primary" round @click="handleTerms()"
               >Criar conta</el-button
             >
             <el-button
@@ -479,6 +539,10 @@ function getTermo(token: string) {
 .break-text {
   white-space: normal;
   margin-bottom: 20px;
+}
+.break-text-only {
+  white-space: normal;
+  margin-bottom: 0;
 }
 
 .terms {
@@ -505,13 +569,17 @@ function getTermo(token: string) {
 }
 
 .back {
-  position: relative;
-  bottom: 100px;
   cursor: pointer;
 }
 
 .back:hover {
   color: #409eff;
+}
+
+.back-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .container-btn {

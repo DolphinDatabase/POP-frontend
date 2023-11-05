@@ -1,13 +1,26 @@
 <script setup lang="ts">
-import { onMounted, ref, onUnmounted, computed } from 'vue'
+import { onMounted, ref, onUnmounted, computed, reactive } from 'vue'
 import api from '@/services/api'
 import { useRoute } from 'vue-router'
 import { MensagemErro, MensagemSucesso } from '@/components/Notificacao'
 import router from '@/router'
 import OnBoard from '@/components/OnBoard/OnBoard.vue'
 
-const user = ref({ id: 0, nome: '', doc: '', email: '', proprietario: false })
-const savedInfo = ref({ id: 0, nome: '', doc: '', email: '', proprietario: false })
+interface TermsForm {
+  termos: boolean
+  privacidade: boolean
+  condicoes: [
+    {
+      id: number
+      texto: string
+      aceite: boolean
+      servico: string
+    }
+  ]
+}
+
+const user = ref({ id: 0, nome: '', doc: '', email: '', grupo: '' })
+const savedInfo = ref({ id: 0, nome: '', doc: '', email: '', grupo: '' })
 const token = ref()
 const currPos = computed(() => ({
   lat: -14.235004,
@@ -22,6 +35,34 @@ const onBoardState = ref(true)
 const drawer = ref(false)
 const op = ref()
 const terms = ref(false)
+const termos = ref({
+  id: 0,
+  grupo: '',
+  data: '',
+  texto: '',
+  aceite: false,
+  condicoes: [
+    {
+      id: 0,
+      texto: '',
+      aceite: false,
+      servico: ''
+    }
+  ]
+})
+
+const cadastroTerms = reactive<TermsForm>({
+  termos: false,
+  privacidade: false,
+  condicoes: [
+    {
+      id: 0,
+      texto: '',
+      aceite: false,
+      servico: ''
+    }
+  ]
+})
 
 const chartOptions = {
   chart: {
@@ -90,9 +131,11 @@ function updateUser() {
     .put(
       'usuario',
       {
+        id: user.value.id,
         nome: user.value.nome,
         doc: user.value.doc,
-        email: user.value.email
+        email: user.value.email,
+        grupo: user.value.grupo
       },
       {
         headers: { Authorization: `Bearer ${token.value}` }
@@ -130,7 +173,60 @@ function getUser() {
     .then((res) => {
       user.value = { ...res.data }
       savedInfo.value = res.data
+      getTermo()
     })
+}
+
+function getTermo() {
+  api
+    .get('termo', {
+      headers: { Authorization: `Bearer ${token.value}` }
+    })
+    .then((res) => {
+      termos.value = res.data
+      console.log(termos.value)
+      if (res.data.grupo == 'proprietario') {
+        cadastroTerms.condicoes = res.data.condicoes
+      } else {
+        cadastroTerms.condicoes = res.data.condicoes
+      }
+    })
+}
+
+async function handleTerms() {
+  if (termos.value.aceite) {
+    api
+      .put(
+        'termo',
+        {
+          id: termos.value.id,
+          grupo: termos.value.grupo,
+          data: termos.value.data,
+          texto: termos.value.texto,
+          aceite: termos.value.aceite,
+          condicoes: cadastroTerms.condicoes
+        },
+        {
+          headers: { Authorization: `Bearer ${token.value}` }
+        }
+      )
+      .then(() => {
+        terms.value = false
+        setTimeout(() => {
+          MensagemSucesso('Termo(s) aceito(s) com sucesso!')
+        }, 1000)
+      })
+      .catch((err) => {
+        console.log(err)
+        setTimeout(() => {
+          MensagemErro('Houve um erro ao concluir o aceite!')
+        }, 1000)
+      })
+  } else {
+    setTimeout(() => {
+      MensagemErro('Aceite os termos de uso, por favor!')
+    }, 1000)
+  }
 }
 
 onMounted(() => {
@@ -420,7 +516,7 @@ function initMap(): void {
                 <el-input v-model="user.email" />
               </el-form-item>
               <p v-if="user.email === ''" style="color: #ef5350">Por favor preencha o email!</p>
-              <div v-if="user.proprietario">
+              <div v-if="user.grupo === 'proprietario'">
                 <p>CPF</p>
                 <el-form-item>
                   <el-input v-model="user.doc" disabled />
@@ -443,7 +539,48 @@ function initMap(): void {
       </el-dialog>
     </div>
     <div class="terms-modal" v-if="terms">
-      <el-dialog v-model="terms"> teste </el-dialog>
+      <el-dialog v-model="terms">
+        <h3>Termos e condições</h3>
+        <div class="all-terms">
+          <el-form
+            :model="cadastroTerms"
+            class="demo-ruleForm"
+            label-width="120px"
+            label-position="top"
+            status-icon
+            size="default"
+          >
+            <div class="check-terms" v-for="condicao in cadastroTerms.condicoes" :key="condicao.id">
+              <el-form-item prop="condicoes">
+                <el-checkbox
+                  v-model="condicao.aceite"
+                  :label="condicao.texto"
+                  size="large"
+                  :class="cadastroTerms.condicoes.length > 1 ? 'break-text' : 'break-text-only'"
+                />
+              </el-form-item>
+            </div>
+            <div class="check-terms">
+              <el-form-item prop="termos">
+                <el-checkbox
+                  v-model="termos.aceite"
+                  label="Li e aceito os Termos de Uso e Política de Privacidade."
+                  size="large"
+                />
+                <el-icon v-if="user.grupo != 'proprietario'" @click="$router.push('/terms')"
+                  ><Connection
+                /></el-icon>
+                <el-icon v-else @click="$router.push('/terms-owner')"><Connection /></el-icon>
+              </el-form-item>
+            </div>
+            <div class="term-btn">
+              <div>
+                <el-button type="primary" round @click="handleTerms()">Ok</el-button>
+              </div>
+            </div>
+          </el-form>
+        </div>
+      </el-dialog>
     </div>
     <el-drawer v-model="drawer" title="I am the title" :with-header="false" class="drawer">
       <div class="drawer-details">
@@ -491,6 +628,15 @@ function initMap(): void {
   border: 1px solid grey;
 }
 
+.break-text {
+  white-space: normal;
+  margin-bottom: 20px;
+}
+.break-text-only {
+  white-space: normal;
+  margin-bottom: 0;
+}
+
 .drawer p {
   font-size: 12px;
 }
@@ -505,6 +651,12 @@ function initMap(): void {
   word-break: break-word;
   gap: 4px;
   justify-content: center;
+}
+
+.term-btn {
+  display: flex;
+  justify-content: flex-end;
+  padding: 32px 0 0;
 }
 
 .drawer-content {
@@ -599,6 +751,16 @@ footer img {
 
 #zoom-out-control {
   left: 45%;
+}
+
+.check-terms {
+  display: grid;
+  align-items: center;
+}
+
+.check-terms .el-icon {
+  color: #2898ff;
+  cursor: pointer;
 }
 </style>
 
