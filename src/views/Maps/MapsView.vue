@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref, onUnmounted, computed, reactive } from 'vue'
 import api from '@/services/api'
+import timeSeries from '@/services/timeSeries'
 import { useRoute } from 'vue-router'
 import { MensagemErro, MensagemSucesso } from '@/components/Notificacao'
 import router from '@/router'
@@ -17,6 +18,10 @@ interface TermsForm {
       servico: string
     }
   ]
+}
+
+interface chartData{
+  [key:string]:null|number
 }
 
 const user = ref({ id: 0, nome: '', doc: '', email: '', grupo: '' })
@@ -51,6 +56,10 @@ const termos = ref({
   ]
 })
 
+const timeSeriesExist = ref(false)
+const timeSeriesData = ref<(number | null)[]>([])
+const timeSeriesPredict = ref<(number | null)[]>([])
+
 const cadastroTerms = reactive<TermsForm>({
   termos: false,
   privacidade: false,
@@ -72,18 +81,18 @@ const chartOptions = {
     curve: 'smooth'
   },
   xaxis: {
-    categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul']
+    categories: []
   }
 }
 
 const chartSeries = [
   {
     name: 'Data',
-    data: [30, 40, 25, 50, 49, 21, 70]
+    data: timeSeriesData
   },
   {
     name: 'Predict',
-    data: [null, null, null, null, null, null, 72, 74, 60]
+    data: timeSeriesPredict
   }
 ]
 
@@ -372,8 +381,36 @@ function initMap(): void {
           if (data.status == 200) {
             drawer.value = true
             op.value = data.data
-            sidePanel!.innerHTML = JSON.stringify(data.data, null, 2)
-            sidePanel!.style.display = 'block'
+            var inicio = new Date(op.value.fim_plantio)
+            inicio.setDate(inicio.getDate() - 60);
+            var inicio_format = `${inicio.getFullYear()}-${String(inicio.getMonth() + 1).padStart(2, '0')}-${String(inicio.getDate()).padStart(2, '0')}`
+            var fim = new Date(op.value.fim_colheita)
+            fim.setDate(fim.getDate() + 60);
+            var fim_format = `${fim.getFullYear()}-${String(fim.getMonth() + 1).padStart(2, '0')}-${String(fim.getDate()).padStart(2, '0')}`
+            timeSeries.get(`time_series?gleba=${properties.gleba_id}&inicio=${inicio_format}&fim=${fim_format}`)
+            .then((ts)=>{
+              if(ts.status == 200){
+                timeSeriesExist.value = true
+                var data:chartData = {}
+                var data_predict:chartData = {}
+                for(let i in ts.data.data){
+                  var d = new Date(parseInt(i,10))
+                  var formatted_data = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+                  data_predict[formatted_data] = null
+                  data[formatted_data] = ts.data.data[i]
+                }
+                for(let i in ts.data.predict){
+                  var d = new Date(parseInt(i,10))
+                  var formatted_data = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+                  data_predict[formatted_data] = ts.data.predict[i]
+                }
+                timeSeriesData.value = Object.values(data)
+                timeSeriesPredict.value = Object.values(data_predict)
+              }
+            })
+            .catch(err=>{
+              timeSeriesExist.value = false
+            })
           }
         })
     })
@@ -613,7 +650,8 @@ function initMap(): void {
         </div>
         <h6>Predição</h6>
       </div>
-      <apexchart width="100%" type="line" :options="chartOptions" :series="chartSeries"></apexchart>
+      <apexchart v-if="timeSeriesExist" width="100%" type="line" :options="chartOptions" :series="chartSeries"></apexchart>
+      <h5 v-else>Nenhuma série temporal</h5>
     </el-drawer>
   </div>
 </template>
