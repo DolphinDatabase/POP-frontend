@@ -10,8 +10,6 @@ import OnBoardSlideB from './OnBoardSlideB.vue'
 import OnBoardSlideC from './OnBoardSlideC.vue'
 import OnBoardSlideD from './OnBoardSlideD.vue'
 import OnBoardSlideE from './OnBoardSlideE.vue'
-import OnBoardSlideF from './OnBoardSlideF.vue'
-
 
 const props = defineProps({
   fecharOnBoard: {
@@ -20,5 +18,5 @@ const props = defineProps({
   }
 })
 
-const slides: any = [OnBoardSlideA, OnBoardSlideB, OnBoardSlideC, OnBoardSlideD, OnBoardSlideE, OnBoardSlideF]
+const slides: any = [OnBoardSlideA, OnBoardSlideB, OnBoardSlideC, OnBoardSlideD, OnBoardSlideE]
 </script>

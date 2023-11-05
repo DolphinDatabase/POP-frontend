@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import api from '@/services/api'
-import { onMounted, ref } from 'vue'
+import {onMounted, ref} from 'vue'
 
-const termo = ref({ texto: '' })
+const termo = ref({texto:""})
 
 onMounted(() => {
   api
-    .get('termo/operador')
+    .get('termo/proprietario')
     .then((res) => {
       termo.value.texto = res.data.texto
     })
@@ -21,7 +21,8 @@ onMounted(() => {
     <img class="arrow" @click="$router.push('/')" src="../../assets/arrow.svg" alt="" />
     <img src="../../assets/logos/light_logo.svg" alt="" />
   </div>
-  <div class="terms-page" v-html="termo.texto"></div>
+  <div class="terms-page" v-html="termo.texto">
+  </div>
 </template>
 
 <style scoped>
@@ -39,8 +40,8 @@ onMounted(() => {
 }
 
 .arrow {
-  width: 20px;
-  cursor: pointer;
+    width: 20px;
+    cursor: pointer
 }
 
 button {

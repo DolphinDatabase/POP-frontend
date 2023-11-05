@@ -1,7 +1,8 @@
 import axios from 'axios'
 
 const api = axios.create({
-    baseURL:'http://192.168.15.131:5050/'
+    // Change to http://localhost:5050/ if you're running out of a k8s cluster
+    baseURL:'http://localhost:5050/'
 })
 
 export default api

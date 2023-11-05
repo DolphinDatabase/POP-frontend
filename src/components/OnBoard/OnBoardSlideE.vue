@@ -1,16 +1,9 @@
 <script setup lang="ts">
-const props = defineProps({
-  fecharOnBoard: {
-    required: true,
-    type: Function
-  }
-})
 </script>
 <template>
   <div class="on-board-e">
-    <h2>Acesse essa tela <span>a qualquer momento</span>, clicando em ajuda</h2>
-    <img src="../../assets/slides/help.svg" alt="" />
-    <el-button type="primary" round @click="fecharOnBoard">Ir para a aplicação</el-button>
+    <h4>Acesse os termos e condições para alterar sua escolha</h4>
+    <img src="../../assets/slides/terms.png" alt="" />
   </div>
 </template>
 
@@ -21,18 +14,14 @@ const props = defineProps({
   justify-items: center;
   align-items: center;
 }
-.on-board-e h2 {
+.on-board-e h4 {
   color: #405261;
   padding: 16px;
 }
 
-.on-board-e span {
-  color: #60bb45;
+.on-board-e img {
+  width: 900px;
 }
+
 </style>
 
-<style>
-.on-board-e .el-button.el-button--primary.is-round {
-  width: 300px;
-}
-</style>
