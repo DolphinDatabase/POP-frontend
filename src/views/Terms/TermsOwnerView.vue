@@ -2,15 +2,18 @@
 import api from '@/services/api'
 import {onMounted, ref} from 'vue'
 
-const termo = ref({text:""})
+const termo = ref({texto:""})
 
-onMounted(()=>{
-  api.get('termo/last?proprietario=true')
-  .then(res=>{
-    termo.value = res.data
-  })
+onMounted(() => {
+  api
+    .get('termo/proprietario')
+    .then((res) => {
+      termo.value.texto = res.data.texto
+    })
+    .catch((error) => {
+      console.error('erro:', error)
+    })
 })
-
 </script>
 
 <template>
@@ -18,7 +21,7 @@ onMounted(()=>{
     <img class="arrow" @click="$router.push('/')" src="../../assets/arrow.svg" alt="" />
     <img src="../../assets/logos/light_logo.svg" alt="" />
   </div>
-  <div class="terms-page" v-html="termo.text">
+  <div class="terms-page" v-html="termo.texto">
   </div>
 </template>
 

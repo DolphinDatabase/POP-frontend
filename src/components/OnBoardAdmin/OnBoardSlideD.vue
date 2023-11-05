@@ -6,7 +6,7 @@ const items = ref(['Adicionar', 'Editar', 'Excluir parâmetros'])
 </script>
 <template>
   <div class="on-board-d">
-    <h4>Nos termos do proprietário clicando em "continuar" você consegue:</h4>
+    <h4>Clicando em "continuar" você consegue:</h4>
     <div class="on-board-item-d">
       <OnBoardItem v-for="(item, index) in items" :key="index" :texto="item" />
     </div>

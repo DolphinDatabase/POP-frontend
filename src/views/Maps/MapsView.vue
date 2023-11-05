@@ -1,13 +1,26 @@
 <script setup lang="ts">
-import { onMounted, ref, onUnmounted, computed } from 'vue'
+import { onMounted, ref, onUnmounted, computed, reactive } from 'vue'
 import api from '@/services/api'
 import { useRoute } from 'vue-router'
 import { MensagemErro, MensagemSucesso } from '@/components/Notificacao'
 import router from '@/router'
 import OnBoard from '@/components/OnBoard/OnBoard.vue'
 
-const user = ref({ id: 0, nome: '', doc: '', email: '', proprietario: false })
-const savedInfo = ref({ id: 0, nome: '', doc: '', email: '', proprietario: false })
+interface TermsForm {
+  termos: boolean
+  privacidade: boolean
+  condicoes: [
+    {
+      id: number
+      texto: string
+      aceite: boolean
+      servico: string
+    }
+  ]
+}
+
+const user = ref({ id: 0, nome: '', doc: '', email: '', grupo: '' })
+const savedInfo = ref({ id: 0, nome: '', doc: '', email: '', grupo: '' })
 const token = ref()
 const currPos = computed(() => ({
   lat: -14.235004,
@@ -19,6 +32,60 @@ const avatar = 'https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.
 const userInfo = ref(false)
 const continueLoad = ref(false)
 const onBoardState = ref(true)
+const drawer = ref(false)
+const op = ref()
+const terms = ref(false)
+const termos = ref({
+  id: 0,
+  grupo: '',
+  data: '',
+  texto: '',
+  aceite: false,
+  condicoes: [
+    {
+      id: 0,
+      texto: '',
+      aceite: false,
+      servico: ''
+    }
+  ]
+})
+
+const cadastroTerms = reactive<TermsForm>({
+  termos: false,
+  privacidade: false,
+  condicoes: [
+    {
+      id: 0,
+      texto: '',
+      aceite: false,
+      servico: ''
+    }
+  ]
+})
+
+const chartOptions = {
+  chart: {
+    type: 'area'
+  },
+  stroke: {
+    curve: 'smooth'
+  },
+  xaxis: {
+    categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul']
+  }
+}
+
+const chartSeries = [
+  {
+    name: 'Data',
+    data: [30, 40, 25, 50, 49, 21, 70]
+  },
+  {
+    name: 'Predict',
+    data: [null, null, null, null, null, null, 72, 74, 60]
+  }
+]
 
 function setPrimeiroAcesso() {
   try {
@@ -40,9 +107,11 @@ function fecharOnBoard() {
   onBoardState.value = false
 }
 
-function deleteUser(id: number) {
+function deleteUser() {
   api
-    .delete(`usuario/${id}`)
+    .delete('usuario/', {
+      headers: { Authorization: `Bearer ${token.value}` }
+    })
     .then(() => {
       setTimeout(() => {
         MensagemSucesso('A conta foi deletada com sucesso!')
@@ -57,13 +126,21 @@ function deleteUser(id: number) {
     })
 }
 
-function updateUser(id: number) {
+function updateUser() {
   api
-    .put(`usuario/${id}`, {
-      nome: user.value.nome,
-      doc: user.value.doc,
-      email: user.value.email
-    })
+    .put(
+      'usuario',
+      {
+        id: user.value.id,
+        nome: user.value.nome,
+        doc: user.value.doc,
+        email: user.value.email,
+        grupo: user.value.grupo
+      },
+      {
+        headers: { Authorization: `Bearer ${token.value}` }
+      }
+    )
     .then(() => {
       getUser()
       setTimeout(() => {
@@ -96,11 +173,60 @@ function getUser() {
     .then((res) => {
       user.value = { ...res.data }
       savedInfo.value = res.data
+      getTermo()
     })
 }
 
-function openTermsInNewTab() {
-  window.open('/terms', '_blank')
+function getTermo() {
+  api
+    .get('termo', {
+      headers: { Authorization: `Bearer ${token.value}` }
+    })
+    .then((res) => {
+      termos.value = res.data
+      console.log(termos.value)
+      if (res.data.grupo == 'proprietario') {
+        cadastroTerms.condicoes = res.data.condicoes
+      } else {
+        cadastroTerms.condicoes = res.data.condicoes
+      }
+    })
+}
+
+async function handleTerms() {
+  if (termos.value.aceite) {
+    api
+      .put(
+        'termo',
+        {
+          id: termos.value.id,
+          grupo: termos.value.grupo,
+          data: termos.value.data,
+          texto: termos.value.texto,
+          aceite: termos.value.aceite,
+          condicoes: cadastroTerms.condicoes
+        },
+        {
+          headers: { Authorization: `Bearer ${token.value}` }
+        }
+      )
+      .then(() => {
+        terms.value = false
+        setTimeout(() => {
+          MensagemSucesso('Termo(s) aceito(s) com sucesso!')
+        }, 1000)
+      })
+      .catch((err) => {
+        console.log(err)
+        setTimeout(() => {
+          MensagemErro('Houve um erro ao concluir o aceite!')
+        }, 1000)
+      })
+  } else {
+    setTimeout(() => {
+      MensagemErro('Aceite os termos de uso, por favor!')
+    }, 1000)
+  }
 }
 
 onMounted(() => {
@@ -124,7 +250,6 @@ function initMap(): void {
   const mapElement = document.getElementById('map')
   const input = document.getElementById('search') as HTMLInputElement
   const searchBox = new google.maps.places.SearchBox(input)
-  let infoWindow: google.maps.InfoWindow
   let initialCircleRadius = 100000
 
   async function get_glebas(lat: number, long: number, radius: number, page: number = 1) {
@@ -163,7 +288,8 @@ function initMap(): void {
     const geoJsonStyle = {
       fillColor: 'white',
       strokeColor: 'white',
-      strokeWeight: 2
+      strokeWeight: 2,
+      zIndex: 1
     }
 
     const circleOptions = {
@@ -196,11 +322,16 @@ function initMap(): void {
         map.data.remove(feature)
       })
     })
-
     google.maps.event.addListener(circle, 'dragend', () => {
       const newCenter = circle.getCenter()
       const newRadius = circle.getRadius()
       continueLoad.value = true
+
+      if (otherPos.value) {
+        otherPos.value.lat = newCenter.lat()
+        otherPos.value.lng = newCenter.lng()
+      }
+
       get_glebas(newCenter.lat(), newCenter.lng(), newRadius)
     })
 
@@ -216,8 +347,6 @@ function initMap(): void {
     })
     circle.bindTo('center', currMarker, 'position')
 
-    infoWindow = new google.maps.InfoWindow()
-
     map.data.setStyle(() => {
       return geoJsonStyle
     })
@@ -225,55 +354,26 @@ function initMap(): void {
     map.data.addListener('click', (event) => {
       const properties = event.feature.h
 
-      if (infoWindow) {
-        infoWindow.close()
-      }
-      infoWindow = new google.maps.InfoWindow({
-        content: `<div>loading...</div>`
-      })
-      infoWindow.setPosition(event.latLng)
-      infoWindow.open(map)
+      const plotCoordinates = event.latLng
+
+      const newZoomLevel = 16
+      const newPosition = plotCoordinates
+
+      const sidePanel = document.getElementById('side-panel')
+
+      map.setZoom(newZoomLevel)
+      map.setCenter(newPosition)
+
       api
         .get(`operacao/${properties.operacao_id}`, {
           headers: { Authorization: `Bearer ${token.value}` }
         })
         .then((data) => {
           if (data.status == 200) {
-            if (infoWindow) {
-              infoWindow.close()
-            }
-            let op = data.data
-            let content = `<div style='display:grid;grid-template-columns: 1fr 1fr;gap:15px'>`
-            content += `<div>`
-            content += `<p><b>Início plantio:</b> ${op.inicio_plantio}</br>`
-            content += `<b>Fim plantio:</b> ${op.fim_plantio}</br>`
-            content += `<b>Início colheita:</b> ${op.inicio_colheita}</br>`
-            content += `<b>Fim colheita:</b> ${op.fim_colheita}</br>`
-            content += `<b>Estado:</b> ${op.estado.descricao}</br>`
-            content += `<b>Município:</b> ${op.municipio.descricao}</br>`
-            content += `</br><b>Sistema de produção Agrícola:</b></br>`
-            content += `<b>Tipo Solo:</b> ${op.solo.descricao}</br>`
-            content += `<b>Irrigação:</b> ${op.irrigacao.descricao}</br>`
-            content += `<b>Tipo cultivo:</b> ${op.cultivo.descricao}</br>`
-            content += `<b>Grão/Semente:</b> ${op.grao_semente.descricao}</br>`
-            content += `<b>Ciclo do cultivar:</b> ${op.ciclo.descricao}</p>`
-            content += `</div>`
-            content += `<div>`
-            content += `<p><b>Empreendimento:</b></br>`
-            content += `<b>Cesta: </b>${op.empreendimento.cesta}</br>`
-            content += `<b>Zoneamento: </b>${op.empreendimento.zoneamento}</br>`
-            content += `<b>Variedade: </b>${op.empreendimento.variedade}</br>`
-            content += `<b>Produto: </b>${op.empreendimento.produto}</br>`
-            content += `<b>Modalidade: </b>${op.empreendimento.modalidade}</br>`
-            content += `<b>Atividade: </b>${op.empreendimento.atividade}</br>`
-            content += `<b>Finalidade: </b>${op.empreendimento.finalidade}</p>`
-            content += `</div>`
-            content += `</div>`
-            infoWindow = new google.maps.InfoWindow({
-              content: content
-            })
-            infoWindow.setPosition(event.latLng)
-            infoWindow.open(map)
+            drawer.value = true
+            op.value = data.data
+            sidePanel!.innerHTML = JSON.stringify(data.data, null, 2)
+            sidePanel!.style.display = 'block'
           }
         })
     })
@@ -328,8 +428,15 @@ function initMap(): void {
         } else {
           bounds.extend(place.geometry.location)
         }
+
+        circle.setCenter(place.geometry.location)
       })
+      const maxZoom = 5
       map.fitBounds(bounds)
+
+      if (map.getZoom() > maxZoom) {
+        map.setZoom(maxZoom)
+      }
     })
   }
 }
@@ -347,11 +454,6 @@ function initMap(): void {
           <img src="../../assets/logos/black_logo.svg" alt="" />
         </div>
         <div class="usr-options">
-          <div v-if="otherPos">
-            <h6>
-              Latitude: {{ otherPos.lat.toFixed(2) }} Longitude: {{ otherPos.lng.toFixed(2) }}
-            </h6>
-          </div>
           <div class="usr-options">
             <h5>{{ savedInfo.nome }}</h5>
             <el-dropdown>
@@ -369,10 +471,9 @@ function initMap(): void {
                   <el-dropdown-item @click="userInfo = true"
                     ><el-icon><Tools /></el-icon>Configurações</el-dropdown-item
                   >
-                  <el-dropdown-item @click="openTermsInNewTab" target="_blank"
-                    ><el-icon><Management /></el-icon>Termos e condições<el-icon
-                      ><TopRight /></el-icon
-                  ></el-dropdown-item>
+                  <el-dropdown-item @click="terms = true" target="_blank"
+                    ><el-icon><Management /></el-icon>Termos e condições
+                  </el-dropdown-item>
                   <el-dropdown-item @click="$router.push('/')"
                     ><el-icon><SwitchButton /></el-icon>Sair</el-dropdown-item
                   >
@@ -415,7 +516,7 @@ function initMap(): void {
                 <el-input v-model="user.email" />
               </el-form-item>
               <p v-if="user.email === ''" style="color: #ef5350">Por favor preencha o email!</p>
-              <div v-if="user.proprietario">
+              <div v-if="user.grupo === 'proprietario'">
                 <p>CPF</p>
                 <el-form-item>
                   <el-input v-model="user.doc" disabled />
@@ -423,7 +524,7 @@ function initMap(): void {
               </div>
             </el-form>
           </div>
-          <div class="del-user" @click="deleteUser(user.id)">
+          <div class="del-user" @click="deleteUser()">
             <h4>Excluir conta</h4>
           </div>
           <div class="upd-btn">
@@ -431,12 +532,89 @@ function initMap(): void {
               <el-button round @click="cancelUpdate">Cancelar</el-button>
             </div>
             <div>
-              <el-button type="primary" round @click="updateUser(user.id)">Salvar</el-button>
+              <el-button type="primary" round @click="updateUser()">Salvar</el-button>
             </div>
           </div>
         </div>
       </el-dialog>
     </div>
+    <div class="terms-modal" v-if="terms">
+      <el-dialog v-model="terms">
+        <h3>Termos e condições</h3>
+        <div class="all-terms">
+          <el-form
+            :model="cadastroTerms"
+            class="demo-ruleForm"
+            label-width="120px"
+            label-position="top"
+            status-icon
+            size="default"
+          >
+            <div class="check-terms" v-for="condicao in cadastroTerms.condicoes" :key="condicao.id">
+              <el-form-item prop="condicoes">
+                <el-checkbox
+                  v-model="condicao.aceite"
+                  :label="condicao.texto"
+                  size="large"
+                  :class="cadastroTerms.condicoes.length > 1 ? 'break-text' : 'break-text-only'"
+                />
+              </el-form-item>
+            </div>
+            <div class="check-terms">
+              <el-form-item prop="termos">
+                <el-checkbox
+                  v-model="termos.aceite"
+                  label="Li e aceito os Termos de Uso e Política de Privacidade."
+                  size="large"
+                />
+                <el-icon v-if="user.grupo != 'proprietario'" @click="$router.push('/terms')"
+                  ><Connection
+                /></el-icon>
+                <el-icon v-else @click="$router.push('/terms-owner')"><Connection /></el-icon>
+              </el-form-item>
+            </div>
+            <div class="term-btn">
+              <div>
+                <el-button type="primary" round @click="handleTerms()">Ok</el-button>
+              </div>
+            </div>
+          </el-form>
+        </div>
+      </el-dialog>
+    </div>
+    <el-drawer v-model="drawer" title="I am the title" :with-header="false" class="drawer">
+      <div class="drawer-details">
+        <div>
+          <h6>Plantio</h6>
+          <p>Início plantio: {{ op.inicio_plantio }}</p>
+          <p>Fim plantio: {{ op.fim_plantio }}</p>
+          <p>Início colheita: {{ op.inicio_colheita }}</p>
+          <p>Fim colheita: {{ op.fim_colheita }}</p>
+          <p>Estado: {{ op.estado.descricao }}</p>
+          <p>Município: {{ op.municipio.descricao }}</p>
+        </div>
+        <div class="drawer-content">
+          <h6>Sistema de produção Agrícola</h6>
+          <p>Tipo Solo: {{ op.solo.descricao }}</p>
+          <p>Irrigação: {{ op.irrigacao.descricao }}</p>
+          <p>Tipo cultivo: {{ op.cultivo.descricao }}</p>
+          <p>Grão/Semente: {{ op.grao_semente.descricao }}</p>
+          <p>Ciclo do cultivar: {{ op.ciclo.descricao }}</p>
+        </div>
+        <div>
+          <h6>Empreendimento</h6>
+          <p>Cesta: {{ op.empreendimento.cesta }}</p>
+          <p>Zoneamento: {{ op.empreendimento.zoneamento }}</p>
+          <p>Variedade: {{ op.empreendimento.variedade }}</p>
+          <p>Produto: {{ op.empreendimento.produto }}</p>
+          <p>Modalidade: {{ op.empreendimento.modalidade }}</p>
+          <p>Atividade: {{ op.empreendimento.atividade }}</p>
+          <p>Finalidade: {{ op.empreendimento.finalidade }}</p>
+        </div>
+        <h6>Predição</h6>
+      </div>
+      <apexchart width="100%" type="line" :options="chartOptions" :series="chartSeries"></apexchart>
+    </el-drawer>
   </div>
 </template>
 
@@ -449,8 +627,43 @@ function initMap(): void {
   padding: 8px 16px;
   border: 1px solid grey;
 }
-.image {
-  width: 120px;
+
+.break-text {
+  white-space: normal;
+  margin-bottom: 20px;
+}
+.break-text-only {
+  white-space: normal;
+  margin-bottom: 0;
+}
+
+.drawer p {
+  font-size: 12px;
+}
+
+.drawer h6 {
+  margin-bottom: 0;
+}
+
+.drawer-details {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  word-break: break-word;
+  gap: 4px;
+  justify-content: center;
+}
+
+.term-btn {
+  display: flex;
+  justify-content: flex-end;
+  padding: 32px 0 0;
+}
+
+.drawer-content {
+  border-left: 1px solid #282a2c;
+  border-right: 1px solid #282a2c;
+  padding: 0 16px;
+  margin: 0 8px;
 }
 
 footer {
@@ -539,6 +752,16 @@ footer img {
 #zoom-out-control {
   left: 45%;
 }
+
+.check-terms {
+  display: grid;
+  align-items: center;
+}
+
+.check-terms .el-icon {
+  color: #2898ff;
+  cursor: pointer;
+}
 </style>
 
 <style>
@@ -560,5 +783,10 @@ footer img {
 
 .user-modal .el-dialog {
   width: 450px;
+}
+
+.el-drawer.ltr,
+.el-drawer.rtl {
+  width: 45% !important;
 }
 </style>
