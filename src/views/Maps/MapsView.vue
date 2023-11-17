@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { onMounted, ref, onUnmounted, computed, reactive } from 'vue'
 import api from '@/services/api'
-import timeSeries from '@/services/timeSeries'
 import { useRoute } from 'vue-router'
 import { MensagemErro, MensagemSucesso } from '@/components/Notificacao'
 import router from '@/router'
 import OnBoard from '@/components/OnBoard/OnBoard.vue'
+import html2canvas from 'html2canvas'
+import jsPDF from 'jspdf'
 
 interface TermsForm {
   termos: boolean
@@ -20,8 +21,8 @@ interface TermsForm {
   ]
 }
 
-interface chartData{
-  [key:string]:null|number
+interface chartData {
+  [key: string]: null | number
 }
 
 const user = ref({ id: 0, nome: '', doc: '', email: '', grupo: '' })
@@ -31,6 +32,8 @@ const currPos = computed(() => ({
   lat: -14.235004,
   lng: -51.92528
 }))
+const op_id = ref()
+const gl_id = ref()
 const otherPos = ref()
 const latLngListener = ref()
 const avatar = 'https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png'
@@ -40,6 +43,7 @@ const onBoardState = ref(true)
 const drawer = ref(false)
 const op = ref()
 const terms = ref(false)
+const pdfContent = ref(null)
 const termos = ref({
   id: 0,
   grupo: '',
@@ -110,6 +114,62 @@ function getPrimeiroAcesso() {
   } catch {
     return false
   }
+}
+
+async function generatePDF(op: any) {
+  const pdf = new jsPDF()
+
+  pdf.setFontSize(10)
+
+  pdf.text(`Id operação: ${op_id.value}`, 10, 10)
+  pdf.text(`Id da gleba: ${gl_id.value}`, 10, 20)
+
+  pdf.text('Plantio', 10, 40)
+  pdf.text(`Início plantio: ${op.inicio_plantio}`, 10, 50)
+  pdf.text(`Fim plantio: ${op.fim_plantio}`, 10, 60)
+  pdf.text(`Início colheita: ${op.inicio_colheita}`, 10, 70)
+  pdf.text(`Fim colheita: ${op.fim_colheita}`, 10, 80)
+  pdf.text(`Estado: ${op.estado.descricao}`, 10, 90)
+  pdf.text(`Município: ${op.municipio.descricao}`, 10, 100)
+
+  pdf.text('Sistema de produção Agrícola', 10, 120)
+  pdf.text(`Tipo Solo: ${op.solo.descricao}`, 10, 130)
+  pdf.text(`Irrigação: ${op.irrigacao.descricao}`, 10, 140)
+  pdf.text(`Tipo cultivo: ${op.cultivo.descricao}`, 10, 150)
+  pdf.text(`Grão/Semente: ${op.grao_semente.descricao}`, 10, 160)
+  pdf.text(`Ciclo do cultivar: ${op.ciclo.descricao}`, 10, 170)
+
+  pdf.text('Empreendimento', 10, 190)
+  pdf.text(`Cesta: ${op.empreendimento.cesta}`, 10, 200)
+  pdf.text(`Zoneamento: ${op.empreendimento.zoneamento}`, 10, 210)
+  pdf.text(`Variedade: ${op.empreendimento.variedade}`, 10, 220)
+  pdf.text(`Produto: ${op.empreendimento.produto}`, 10, 230)
+  pdf.text(`Modalidade: ${op.empreendimento.modalidade}`, 10, 240)
+  pdf.text(`Atividade: ${op.empreendimento.atividade}`, 10, 250)
+  pdf.text(`Finalidade: ${op.empreendimento.finalidade}`, 10, 260)
+
+  if (timeSeriesExist.value) {
+    const el = document.getElementById('chartContainer')
+
+    const options = {
+      type: 'dataURL'
+    }
+
+    const printCanvas = await html2canvas(el!, options)
+    let img = printCanvas.toDataURL('image/png').replace('image/png', 'image/time-series')
+
+    pdf.addPage()
+
+    pdf.text('Predição', 10, 10)
+
+    const imgData = img
+    const imgWidth = 100
+    const imgHeight = 80
+
+    pdf.addImage(imgData, 'PNG', 10, 20, imgWidth, imgHeight)
+  }
+
+  pdf.save('document.pdf')
 }
 
 function fecharOnBoard() {
@@ -193,7 +253,6 @@ function getTermo() {
     })
     .then((res) => {
       termos.value = res.data
-      console.log(termos.value)
       if (res.data.grupo == 'proprietario') {
         cadastroTerms.condicoes = res.data.condicoes
       } else {
@@ -379,38 +438,55 @@ function initMap(): void {
         })
         .then((data) => {
           if (data.status == 200) {
+            op_id.value = properties.operacao_id
+            gl_id.value = properties.gleba_id
             drawer.value = true
             op.value = data.data
             var inicio = new Date(op.value.fim_plantio)
-            inicio.setDate(inicio.getDate() - 60);
-            var inicio_format = `${inicio.getFullYear()}-${String(inicio.getMonth() + 1).padStart(2, '0')}-${String(inicio.getDate()).padStart(2, '0')}`
+            inicio.setDate(inicio.getDate() - 60)
+            var inicio_format = `${inicio.getFullYear()}-${String(inicio.getMonth() + 1).padStart(
+              2,
+              '0'
+            )}-${String(inicio.getDate()).padStart(2, '0')}`
             var fim = new Date(op.value.fim_colheita)
-            fim.setDate(fim.getDate() + 60);
-            var fim_format = `${fim.getFullYear()}-${String(fim.getMonth() + 1).padStart(2, '0')}-${String(fim.getDate()).padStart(2, '0')}`
-            timeSeries.get(`time_series?gleba=${properties.gleba_id}&inicio=${inicio_format}&fim=${fim_format}`)
-            .then((ts)=>{
-              if(ts.status == 200){
-                timeSeriesExist.value = true
-                var data:chartData = {}
-                var data_predict:chartData = {}
-                for(let i in ts.data.data){
-                  var d = new Date(parseInt(i,10))
-                  var formatted_data = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-                  data_predict[formatted_data] = null
-                  data[formatted_data] = ts.data.data[i]
+            fim.setDate(fim.getDate() + 60)
+            var fim_format = `${fim.getFullYear()}-${String(fim.getMonth() + 1).padStart(
+              2,
+              '0'
+            )}-${String(fim.getDate()).padStart(2, '0')}`
+            api
+              .get(
+                `time_series?gleba=${properties.gleba_id}&inicio=${inicio_format}&fim=${fim_format}`
+              )
+              .then((ts) => {
+                if (ts.status == 200) {
+                  timeSeriesExist.value = true
+                  var data: chartData = {}
+                  var data_predict: chartData = {}
+                  for (let i in ts.data.data) {
+                    var d = new Date(parseInt(i, 10))
+                    var formatted_data = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(
+                      2,
+                      '0'
+                    )}-${String(d.getDate()).padStart(2, '0')}`
+                    data_predict[formatted_data] = null
+                    data[formatted_data] = ts.data.data[i]
+                  }
+                  for (let i in ts.data.predict) {
+                    var d = new Date(parseInt(i, 10))
+                    var formatted_data = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(
+                      2,
+                      '0'
+                    )}-${String(d.getDate()).padStart(2, '0')}`
+                    data_predict[formatted_data] = ts.data.predict[i]
+                  }
+                  timeSeriesData.value = Object.values(data)
+                  timeSeriesPredict.value = Object.values(data_predict)
                 }
-                for(let i in ts.data.predict){
-                  var d = new Date(parseInt(i,10))
-                  var formatted_data = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-                  data_predict[formatted_data] = ts.data.predict[i]
-                }
-                timeSeriesData.value = Object.values(data)
-                timeSeriesPredict.value = Object.values(data_predict)
-              }
-            })
-            .catch(err=>{
-              timeSeriesExist.value = false
-            })
+              })
+              .catch((err) => {
+                timeSeriesExist.value = false
+              })
           }
         })
     })
@@ -619,8 +695,13 @@ function initMap(): void {
         </div>
       </el-dialog>
     </div>
-    <el-drawer v-model="drawer" title="I am the title" :with-header="false" class="drawer">
-      <div class="drawer-details">
+    <el-drawer v-model="drawer" :with-header="false" class="drawer">
+      <div class="download-pdf">
+        <el-tooltip content="Download PDF" placement="left">
+          <el-icon @click="generatePDF(op)"><Download /></el-icon>
+        </el-tooltip>
+      </div>
+      <div class="drawer-details" ref="pdfContent">
         <div>
           <h6>Plantio</h6>
           <p>Início plantio: {{ op.inicio_plantio }}</p>
@@ -648,10 +729,19 @@ function initMap(): void {
           <p>Atividade: {{ op.empreendimento.atividade }}</p>
           <p>Finalidade: {{ op.empreendimento.finalidade }}</p>
         </div>
-        <h6>Predição</h6>
       </div>
-      <apexchart v-if="timeSeriesExist" width="100%" type="line" :options="chartOptions" :series="chartSeries"></apexchart>
-      <h5 v-else>Nenhuma série temporal</h5>
+      <div>
+        <h6>Predição</h6>
+        <div id="chartContainer" v-if="timeSeriesExist">
+          <apexchart
+            width="100%"
+            type="line"
+            :options="chartOptions"
+            :series="chartSeries"
+          ></apexchart>
+        </div>
+        <h5 v-else>Nenhuma série temporal</h5>
+      </div>
     </el-drawer>
   </div>
 </template>
@@ -664,6 +754,12 @@ function initMap(): void {
   height: 20px;
   padding: 8px 16px;
   border: 1px solid grey;
+}
+
+.download-pdf {
+  display: flex;
+  flex-direction: row-reverse;
+  cursor: pointer;
 }
 
 .drawer p {
