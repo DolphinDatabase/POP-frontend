@@ -213,7 +213,7 @@ async function generatePDF(op: any) {
     pdf.addImage(imgData, 'PNG', 10, 20, imgWidth, imgHeight)
   }
 
-  pdf.save('document.pdf')
+  pdf.save(`${gl_id.value}.pdf`)
 }
 
 function fecharOnBoard() {
