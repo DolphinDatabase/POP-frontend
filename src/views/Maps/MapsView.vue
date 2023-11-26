@@ -63,6 +63,11 @@ const termos = ref({
 const timeSeriesExist = ref(false)
 const timeSeriesData = ref<(number | null)[]>([])
 const timeSeriesPredict = ref<(number | null)[]>([])
+const tempSeriesData = ref<(number | null)[]>([])
+const pressureSeriesData = ref<(number | null)[]>([])
+const humiditySeriesData = ref<(number | null)[]>([])
+const windSeriesData = ref<(number | null)[]>([])
+const cloudsSeriesData = ref<(number | null)[]>([])
 
 const cadastroTerms = reactive<TermsForm>({
   termos: false,
@@ -77,7 +82,7 @@ const cadastroTerms = reactive<TermsForm>({
   ]
 })
 
-const chartOptions = {
+const predictChartOptions = {
   chart: {
     type: 'area'
   },
@@ -89,15 +94,54 @@ const chartOptions = {
   }
 }
 
+const weatherChartOptions: { 
+  chart: { type: string }, 
+  stroke: { curve: string }, 
+  xaxis: { categories: string[] } 
+} = {
+  chart: {
+    type: 'area'
+  },
+  stroke: {
+    curve: 'smooth'
+  },
+  xaxis: {
+    categories: []
+  }
+};
+
 const chartSeries = [
   {
-    name: 'Data',
+    name: 'NDVI',
     data: timeSeriesData
   },
   {
-    name: 'Predict',
-    data: timeSeriesPredict
+    name: 'Predição',
+    data: timeSeriesPredict 
   }
+]
+
+const weatherSeries = [
+  {
+    name: 'Temperatura',
+    data: tempSeriesData
+  },
+  {
+    name: 'Pressão',
+    data: pressureSeriesData
+  },
+  {
+    name: 'Umidade',
+    data: humiditySeriesData
+  },
+  {
+    name: 'Velocidade do Vento',
+    data: windSeriesData
+  },
+  {
+    name: 'Nuvem',
+    data: cloudsSeriesData
+  },
 ]
 
 function setPrimeiroAcesso() {
@@ -164,7 +208,7 @@ async function generatePDF(op: any) {
 
     const imgData = img
     const imgWidth = 100
-    const imgHeight = 80
+    const imgHeight = 100
 
     pdf.addImage(imgData, 'PNG', 10, 20, imgWidth, imgHeight)
   }
@@ -460,12 +504,14 @@ function initMap(): void {
               )
               .then((ts) => {
                 if (ts.status == 200) {
+                  //predict
                   timeSeriesExist.value = true
-                  var data: chartData = {}
-                  var data_predict: chartData = {}
+                  let data: chartData = {}
+                  let data_predict: chartData = {}
+
                   for (let i in ts.data.data) {
-                    var d = new Date(parseInt(i, 10))
-                    var formatted_data = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(
+                    let d = new Date(parseInt(i, 10))
+                    let formatted_data = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(
                       2,
                       '0'
                     )}-${String(d.getDate()).padStart(2, '0')}`
@@ -473,8 +519,8 @@ function initMap(): void {
                     data[formatted_data] = ts.data.data[i]
                   }
                   for (let i in ts.data.predict) {
-                    var d = new Date(parseInt(i, 10))
-                    var formatted_data = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(
+                    let d = new Date(parseInt(i, 10))
+                    let formatted_data = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(
                       2,
                       '0'
                     )}-${String(d.getDate()).padStart(2, '0')}`
@@ -482,9 +528,19 @@ function initMap(): void {
                   }
                   timeSeriesData.value = Object.values(data)
                   timeSeriesPredict.value = Object.values(data_predict)
+
+                  //weather
+                  let weather = ts.data.weather
+                  tempSeriesData.value = Object.values(weather.temp)
+                  pressureSeriesData.value = Object.values(weather.pressure)
+                  humiditySeriesData.value = Object.values(weather.humidity)
+                  windSeriesData.value = Object.values(weather.wind_speed)
+                  cloudsSeriesData.value = Object.values(weather.clouds)
+                  weatherChartOptions.xaxis.categories = Object.keys(weather.temp)
                 }
               })
               .catch((err) => {
+                console.log(err)
                 timeSeriesExist.value = false
               })
           }
@@ -736,8 +792,14 @@ function initMap(): void {
           <apexchart
             width="100%"
             type="line"
-            :options="chartOptions"
+            :options="predictChartOptions"
             :series="chartSeries"
+          ></apexchart>
+          <apexchart
+            width="100%"
+            type="line"
+            :options="weatherChartOptions"
+            :series="weatherSeries"
           ></apexchart>
         </div>
         <h5 v-else>Nenhuma série temporal</h5>
