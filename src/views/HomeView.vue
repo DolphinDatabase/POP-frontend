@@ -260,8 +260,6 @@ function getTermo(token: string) {
         cadastroTerms.condicoes = res.data.condicoes
       } else if (res.data.grupo == 'operador' || role.value == 'operador') {
         cadastroTerms.condicoes = res.data.condicoes
-      } else {
-        console.log('aqui')
       }
     })
 }
